@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fragments="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/videoView"
+        android:layout_width="0.0dp"
+        android:layout_height="0.0dp"
+        android:background="@color/music_player_background"
+        android:soundEffectsEnabled="true"
+        fragments:bar_height="@dimen/dp_8"
+        fragments:bar_gravity="center"
+        fragments:controller_layout_id="@layout/player_controller"
+        fragments:layout_constraintBottom_toBottomOf="parent"
+        fragments:layout_constraintEnd_toEndOf="parent"
+        fragments:layout_constraintStart_toStartOf="parent"
+        fragments:layout_constraintTop_toTopOf="parent"
+        fragments:played_color="@color/teal_200"
+        fragments:repeat_toggle_modes="one|all"
+        fragments:resize_mode="fit"
+        fragments:show_buffering="always"
+        fragments:surface_type="surface_view"
+        fragments:use_controller="true" />
+</androidx.constraintlayout.widget.ConstraintLayout>
