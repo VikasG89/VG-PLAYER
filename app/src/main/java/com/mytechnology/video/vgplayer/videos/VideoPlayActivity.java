@@ -1,6 +1,7 @@
 package com.mytechnology.video.vgplayer.videos;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -15,6 +16,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -24,6 +26,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.activity.OnBackPressedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.WindowCompat;
@@ -32,34 +35,31 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 
-
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoPlayBinding;
-import com.mytechnology.video.vgplayer.utility.OnSwipeListener;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import kotlin.Suppress;
 
-@Suppress(names = "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
-public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener
-        , GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener, GestureDetector.OnContextClickListener {
+public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener, GestureDetector.OnGestureListener{
     protected ActivityVideoPlayBinding binding;
     private static final String TAG = VideoPlayActivity.class.getSimpleName();
 
     private final List<MediaItem> mediaItemList;
     private ArrayList<VideoModel> mvideoModelArrayList;
+    PlayerView playerView;
     private ExoPlayer player;
-    private PlayerView playerView;
     private ConstraintLayout mainLayout;
     protected ImageView previous, next, backWard, forward, playPause;
     private TextView trackName;
     int videoFilesAdapterPosition;
+    String myVFolder;
     private GestureDetector gestureDetector;
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
@@ -117,7 +117,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
         videoFilesAdapterPosition = getIntent().getIntExtra("position", 0);
         mvideoModelArrayList = getIntent().getParcelableArrayListExtra("Parcelable");
-        Log.d(TAG, "position: " + videoFilesAdapterPosition);
+        myVFolder = getIntent().getStringExtra("Folder Name");
+
         player = new ExoPlayer.Builder(this).build();
         playerView.setKeepScreenOn(true);
         for (int i = 0; i < mvideoModelArrayList.size(); ++i) {
@@ -174,28 +175,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
         });
 
-        /*playerView.setOnTouchListener(new OnSwipeListener(this) {
-            @Override
-            public void onSwipeDown() {
-                Toast.makeText(VideoPlayActivity.this, "Down", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onSwipeLeft() {
-                Toast.makeText(VideoPlayActivity.this, "Left", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onSwipeUp() {
-                Toast.makeText(VideoPlayActivity.this, "Up", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onSwipeRight() {
-                Toast.makeText(VideoPlayActivity.this, "Right", Toast.LENGTH_SHORT).show();
-            }
-        });*/
-
         OnBackPressedDispatcher dispatcher = getOnBackPressedDispatcher();
         dispatcher.addCallback(new OnBackPressedCallback(true) {
             @Override
@@ -208,7 +187,10 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 }
                 player.release();
                 mediaItemList.clear();
-                Log.d(TAG, "BackPressed: True");
+                Intent intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
+                intent.putExtra("Folder Name", myVFolder);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
                 finish();
             }
         });
@@ -407,12 +389,12 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event);
+        return gestureDetector.onTouchEvent(event);
     }
 
     @Override
     public boolean onDown(@NonNull MotionEvent e) {
-        return false;
+        return true;
     }
 
     @Override
@@ -425,8 +407,10 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         return false;
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     @Override
     public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
+        playerView.hideController();
         assert e1 != null;
         float deltaX = e2.getX() - e1.getX();
         float deltaY = e2.getY() - e1.getY();
@@ -438,12 +422,14 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 // Horizontal swipe for playback control
                 if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(distanceX) > SWIPE_VELOCITY_THRESHOLD) {
                     // Right swipe - Fast forward
-                    Log.d(TAG, "Fast Forward");
-                    forWard_10Sec();
-                } else /*if (deltaX < -SWIPE_THRESHOLD)*/ {
+                        Log.d(TAG, "Fast Forward");
+                        Toast.makeText(this, "Fast Forward", Toast.LENGTH_SHORT).show();
+                        //forWard_10Sec();
+                } else {
                     // Left swipe - Rewind
                     Log.d(TAG, "Rewind");
-                    backWard_10Sec();
+                    Toast.makeText(this, "Rewind", Toast.LENGTH_SHORT).show();
+                    //backWard_10Sec();
                 }
             } else {
                 Log.d(TAG, "Vertical swipe");
@@ -452,32 +438,27 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                     if (e1.getX() < (float) mainLayout.getWidth() / 2) {
                         // Left half - Brightness
                         Log.d(TAG, "Brightness");
-                        adjustBrightness(-deltaY / mainLayout.getHeight());
+                        Toast.makeText(this, "Brightness", Toast.LENGTH_SHORT).show();
+                        //adjustBrightness(-deltaY / mainLayout.getHeight());
                     } else {
                         // Right half - Volume
                         Log.d(TAG, "Volume");
-                        adjustVolume(-deltaY / mainLayout.getHeight());
+                        Toast.makeText(this, "Volume", Toast.LENGTH_SHORT).show();
+                        //adjustVolume(-deltaY / mainLayout.getHeight());
                     }
                 }
-                /*if (e1.getX() < (float) playerView.getWidth() / 2) {
-                    // Left half - Brightness
-                    Log.d(TAG, "Brightness");
-                    adjustBrightness(-deltaY / playerView.getHeight());
-                } else {
-                    // Right half - Volume
-                    Log.d(TAG, "Volume");
-                    adjustVolume(-deltaY / playerView.getHeight());
-                }*/
+
             }
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-        return false;
+        return true;
     }
 
     @Override
     public void onLongPress(@NonNull MotionEvent e) {
-
+        Toast.makeText(this, "Long Pressed", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -486,23 +467,4 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     }
 
 
-    @Override
-    public boolean onContextClick(@NonNull MotionEvent e) {
-        return false;
-    }
-
-    @Override
-    public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-        return false;
-    }
-
-    @Override
-    public boolean onDoubleTap(@NonNull MotionEvent e) {
-        return false;
-    }
-
-    @Override
-    public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
-        return false;
-    }
 }

@@ -1,6 +1,7 @@
 package com.mytechnology.video.vgplayer.videos;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -18,7 +19,7 @@ import com.mytechnology.video.vgplayer.databinding.ActivityVideoFilesBinding;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class VideoFilesActivity extends AppCompatActivity {
+public class VideoFilesActivity extends AppCompatActivity implements VideoFilesAdapter.ItemClickListener {
     static ArrayList<VideoModel> videoModels;
     VideoFilesAdapter adapter;
     ActivityVideoFilesBinding binding;
@@ -30,6 +31,21 @@ public class VideoFilesActivity extends AppCompatActivity {
         VideoFilesActivity.videoModels = new ArrayList<>();
     }
 
+    protected void onCreate(final Bundle bundle) {
+        super.onCreate(bundle);
+        ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(R.string.title_video);
+        ActivityVideoFilesBinding inflate = ActivityVideoFilesBinding.inflate(getLayoutInflater());
+        binding = inflate;
+        setContentView(inflate.getRoot());
+        recyclerView = binding.videoFilesRV;
+        myVFolder = getIntent().getStringExtra("Folder Name");
+        VideoFilesActivity.videoModels = getVideos(getApplicationContext(), myVFolder);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        final VideoFilesAdapter videoFilesAdapter = new VideoFilesAdapter(this, VideoFilesActivity.videoModels, this);
+        adapter = videoFilesAdapter;
+        recyclerView.setAdapter(videoFilesAdapter);
+    }
+
     private ArrayList<VideoModel> getVideos(final Context context, String s) {
         final ArrayList<VideoModel> list = new ArrayList<>();
         Uri uri;
@@ -39,14 +55,18 @@ public class VideoFilesActivity extends AppCompatActivity {
             uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
         }
         s = "%" + s + "%";
-        final String string = context.getSharedPreferences("com.mytechnology.fragments.ui.videos", 0)
+        final String string = context.getSharedPreferences("com.mytechnology.video.vgplayer.sort_Video", 0)
                 .getString("AUDIO_SORT", "abcd");
-        if (string.equals("byName")) {
-            sortOrder = "_display_name ASC";
-        } else if (string.equals("byDate")) {
-            sortOrder = "date_added DESC";
-        } else if (string.equals("byArtist")) {
-            sortOrder = "_size DESC";
+        switch (string) {
+            case "byName":
+                sortOrder = "_display_name ASC";
+                break;
+            case "byDate":
+                sortOrder = "date_added DESC";
+                break;
+            case "byArtist":
+                sortOrder = "_size DESC";
+                break;
         }
         final Cursor query = context.getContentResolver().query(uri, new String[]{"_data", "_display_name", "date_added", "duration", "_size"},
                 "_data like?", new String[]{s}, sortOrder);
@@ -67,18 +87,14 @@ public class VideoFilesActivity extends AppCompatActivity {
         return list;
     }
 
-    protected void onCreate(final Bundle bundle) {
-        super.onCreate(bundle);
-        ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(R.string.title_video);
-        ActivityVideoFilesBinding inflate = ActivityVideoFilesBinding.inflate(getLayoutInflater());
-        binding = inflate;
-        setContentView(inflate.getRoot());
-        recyclerView = binding.videoFilesRV;
-        myVFolder = getIntent().getStringExtra("Folder Name");
-        VideoFilesActivity.videoModels = getVideos(getApplicationContext(), myVFolder);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        final VideoFilesAdapter videoFilesAdapter = new VideoFilesAdapter(this, VideoFilesActivity.videoModels);
-        adapter = videoFilesAdapter;
-        recyclerView.setAdapter(videoFilesAdapter);
+    @Override
+    public void onItemClick(int adapterPotion) {
+            Intent intent = new Intent(this, VideoPlayActivity.class);
+            intent.putExtra("position", adapterPotion);
+            intent.putExtra("Parcelable", videoModels);
+            intent.putExtra("Folder Name", myVFolder);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
     }
 }

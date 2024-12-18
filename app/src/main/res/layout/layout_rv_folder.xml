@@ -1,20 +1,24 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:fragments="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/folder_layout"
-    android:layout_width="fill_parent"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="1.5dp"
-    fragments:cardCornerRadius="5.0dp"
-    fragments:cardElevation="5.0dp">
+    android:layout_margin="@dimen/dp_4"
+    android:backgroundTint="?android:attr/colorBackground"
+    fragments:cardCornerRadius="@dimen/dp_5"
+    fragments:cardElevation="@dimen/dp_5">
 
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+        android:layout_height="fill_parent"
+        tools:ignore="UseCompoundDrawables">
 
         <ImageView
-            android:layout_width="60.0dp"
-            android:layout_height="60.0dp"
+            android:layout_width="@dimen/dp_50"
+            android:layout_height="@dimen/dp_50"
+            android:background="#9CCCD3"
             android:contentDescription="@string/image_description"
             android:src="@drawable/folder_icon" />
 
@@ -23,9 +27,12 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_gravity="center"
-            android:layout_marginStart="5.0dp"
-            android:layout_marginEnd="5.0dp"
+            android:layout_marginStart="@dimen/dp_5"
+            android:paddingStart="@dimen/dp_10"
+            android:paddingEnd="@dimen/dp_1"
             android:text="@string/folder_name"
-            android:textSize="20.0sp" />
+            android:background="#9CCCD3"
+            android:textColor="@color/black"
+            android:textSize="@dimen/sp_13" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>
