@@ -7,6 +7,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class OnSwipeListener implements View.OnTouchListener {
 
@@ -16,7 +17,7 @@ public class OnSwipeListener implements View.OnTouchListener {
         gestureDetector = new GestureDetector(c, new GestureListener());
     }
 
-    @SuppressLint("ClickableViewAccessibility")
+
     @Override
     public boolean onTouch(final View view, final MotionEvent motionEvent) {
         return gestureDetector.onTouchEvent(motionEvent);
@@ -25,54 +26,54 @@ public class OnSwipeListener implements View.OnTouchListener {
 
     private final class GestureListener extends GestureDetector.SimpleOnGestureListener {
 
-        private static final int SWIPE_THRESHOLD = 100;
-        private static final int SWIPE_VELOCITY_THRESHOLD = 100;
-
         @Override
         public boolean onDown(@NonNull MotionEvent e) {
             return true;
         }
 
-        // Determines the fling velocity and then fires the appropriate swipe event accordingly
         @Override
-        public boolean onFling(MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
-            boolean result = false;
-            try {
-                float diffY = e2.getY() - e1.getY();
-                float diffX = e2.getX() - e1.getX();
-                if (Math.abs(diffX) > Math.abs(diffY)) {
-                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                        if (diffX > 0) {
-                            onSwipeRight();
-                        } else {
-                            onSwipeLeft();
-                        }
-                    }
-                } else {
-                    if (Math.abs(diffY) > SWIPE_THRESHOLD && Math.abs(velocityY) > SWIPE_VELOCITY_THRESHOLD) {
-                        if (diffY > 0) {
-                            onSwipeDown();
-                        } else {
-                            onSwipeUp();
-                        }
-                    }
-                }
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
-            return result;
+        public void onLongPress(@NonNull MotionEvent e) {
+            onLongTouch(e);
+            super.onLongPress(e);
         }
+
+        @Override
+        public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
+            return super.onDoubleTapEvent(e);
+        }
+
+        @Override
+        public boolean onDoubleTap(@NonNull MotionEvent e) {
+            onDoubleTouch(e);
+            return super.onDoubleTap(e);
+        }
+
+        @Override
+        public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
+            onScrollTouch(e1, e2, distanceX, distanceY);
+            return super.onScroll(e1, e2, distanceX, distanceY);
+        }
+
+        @Override
+        public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
+            onSingleTouch();
+            return super.onSingleTapConfirmed(e);
+        }
+
+        @Override
+        public boolean onFling(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
+            return super.onFling(e1, e2, velocityX, velocityY);
+        }
+
     }
 
-    public void onSwipeRight() {
+    public void onDoubleTouch(MotionEvent e){
     }
-
-    public void onSwipeLeft() {
+    public void onSingleTouch(){
     }
-
-    public void onSwipeUp() {
+    public void onLongTouch(MotionEvent e){
     }
+    public void onScrollTouch(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY){
 
-    public void onSwipeDown() {
     }
 }

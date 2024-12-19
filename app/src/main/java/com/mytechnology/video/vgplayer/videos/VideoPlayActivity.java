@@ -1,5 +1,6 @@
 package com.mytechnology.video.vgplayer.videos;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,7 +13,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -41,26 +41,27 @@ import androidx.media3.ui.PlayerView;
 
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoPlayBinding;
+import com.mytechnology.video.vgplayer.utility.OnSwipeListener;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 
-public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener, GestureDetector.OnGestureListener{
+public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener/*, GestureDetector.OnGestureListener*/ {
     protected ActivityVideoPlayBinding binding;
-    private static final String TAG = VideoPlayActivity.class.getSimpleName();
+    private static final String TAG = VideoPlayActivity.class.getSimpleName() + "1";
 
     private final List<MediaItem> mediaItemList;
     private ArrayList<VideoModel> mvideoModelArrayList;
     PlayerView playerView;
     private ExoPlayer player;
     private ConstraintLayout mainLayout;
-    protected ImageView previous, next, backWard, forward, playPause;
+    protected ImageView previous, next, backWard, forward, playPause, lockScreen;
     private TextView trackName;
     int videoFilesAdapterPosition;
     String myVFolder;
-    private GestureDetector gestureDetector;
+    //private GestureDetector gestureDetector;
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
     private AudioManager audioManager;
@@ -78,11 +79,19 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     boolean resumeOnFocusGain = false;
     public static boolean isVideoPlaying = false;
 
+    // swap & zoom variable
+    private int displayHeight, displayWidth;
+    private boolean start = false;
+    private boolean left, right;
+    private static final float PLAY_SPEED_2X = 2f;
+    private static final float PLAY_SPEED_NORMAL = 1f;
+
     public VideoPlayActivity() {
         this.mvideoModelArrayList = new ArrayList<>();
         this.mediaItemList = new ArrayList<>();
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     protected void onCreate(final Bundle bundle) {
         super.onCreate(bundle);
         final ActivityVideoPlayBinding inflate = ActivityVideoPlayBinding.inflate(getLayoutInflater());
@@ -97,11 +106,11 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         forward = playerView.findViewById(R.id.exo_forward);
         playPause = playerView.findViewById(R.id.exo_play_pause);
         trackName = playerView.findViewById(R.id.exo_main_text);
+        lockScreen = playerView.findViewById(R.id.lockScreen);
 
         preferences = getSharedPreferences("video_player", MODE_PRIVATE);
         editor = preferences.edit();
 
-        gestureDetector = new GestureDetector(this, this);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 
@@ -121,6 +130,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
         player = new ExoPlayer.Builder(this).build();
         playerView.setKeepScreenOn(true);
+        playerView.setControllerShowTimeoutMs(1000);
+
         for (int i = 0; i < mvideoModelArrayList.size(); ++i) {
             mediaItemList.add(MediaItem.fromUri(Uri.parse(mvideoModelArrayList.get(i).getPath())));
         }
@@ -136,7 +147,90 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             }
         });
 
+        // Call Play Video Method
         playVideo1(videoFilesAdapterPosition);
+
+        // SwapGesture implementation
+        playerView.setOnTouchListener(new OnSwipeListener(this) {
+            @SuppressLint("ClickableViewAccessibility")
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                    player.setPlaybackSpeed(PLAY_SPEED_NORMAL);
+                }
+                return super.onTouch(view, motionEvent);
+            }
+
+            @Override
+            public void onScrollTouch(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
+                assert e1 != null;
+                float deltaX = e2.getX() - e1.getX();
+                float deltaY = e2.getY() - e1.getY();
+                try {
+                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                        // Horizontal swipe for playback control
+                        if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
+                            // Right swipe - Fast forward
+                            Log.d(TAG, "Fast Forward");
+                            forWard_10Sec();
+                        } else if ((deltaX) < (SWIPE_THRESHOLD)) {
+                            // Left swipe - Rewind
+                            Log.d(TAG, "Rewind");
+                            backWard_10Sec();
+                        }
+                    } else {
+                        // Vertical swipe for volume/brightness control
+                        if (e1.getX() < (float) mainLayout.getWidth() / 2) {
+                            // Left half - Brightness
+                            Log.d(TAG, "Brightness");
+                            adjustBrightness(-deltaY / mainLayout.getHeight());
+                        } else if (e1.getX() > (float) mainLayout.getWidth() / 2) {
+                            // Right half - Volume
+                            Log.d(TAG, "Volume");
+                            adjustVolume(-deltaY / mainLayout.getHeight());
+                        }
+                    }
+                } catch (
+                        Exception e) {
+                    Toast.makeText(VideoPlayActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+                super.onScrollTouch(e1, e2, distanceX, distanceY);
+            }
+
+            @Override
+            public void onDoubleTouch(MotionEvent e) {
+                assert e != null;
+                if (e.getX() < (float) mainLayout.getWidth() / 2) {
+                    // Left half - For rewind on Double Tap
+                    Log.d(TAG, "Rewind on Double Tap");
+                    backWard_10Sec();
+                } else if (e.getX() > (float) mainLayout.getWidth() / 2) {
+                    // Right half - For Fast Forward on Double Tap
+                    Log.d(TAG, "Fast Forward on Double Tap ");
+                    forWard_10Sec();
+                }
+                super.onDoubleTouch(e);
+            }
+
+            @OptIn(markerClass = UnstableApi.class)
+            @Override
+            public void onLongTouch(MotionEvent e) {
+                if (e.getAction() == MotionEvent.ACTION_DOWN) {
+                    player.setPlaybackSpeed(PLAY_SPEED_2X);
+                    Log.d(TAG, "Long Touch");
+                }
+                super.onLongTouch(e);
+            }
+
+            @OptIn(markerClass = UnstableApi.class)
+            @Override
+            public void onSingleTouch() {
+                playerView.showController();
+                player.setPlaybackSpeed(PLAY_SPEED_NORMAL);
+                Log.d(TAG, "Single Touch");
+                super.onSingleTouch();
+            }
+        });
 
         previous.setOnClickListener(v -> previousVideoPlay());
 
@@ -152,6 +246,11 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             } else {
                 playVideo();
             }
+        });
+
+        lockScreen.setOnClickListener(v -> {
+            lockScreen.setImageResource(R.drawable.lock);
+
         });
 
         player.addListener(new Player.Listener() {
@@ -189,7 +288,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 mediaItemList.clear();
                 Intent intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
                 intent.putExtra("Folder Name", myVFolder);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();
             }
@@ -300,9 +399,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     }
 
     private void clearSurface() {
-        player.stop();
-        mediaItemList.clear();
-        player.release();
         SurfaceView surfaceView = new SurfaceView(this);
         player.clearVideoSurfaceHolder(surfaceView.getHolder());
         SurfaceHolder holder = surfaceView.getHolder();
@@ -334,7 +430,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         if (num < 0) {
             player.seekTo(0);
         } else {
-            player.seekTo(player.getCurrentPosition() - 10000);
+            player.seekTo(num - 10000);
         }
     }
 
@@ -386,85 +482,5 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         }
         super.onDestroy();
     }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return gestureDetector.onTouchEvent(event);
-    }
-
-    @Override
-    public boolean onDown(@NonNull MotionEvent e) {
-        return true;
-    }
-
-    @Override
-    public void onShowPress(@NonNull MotionEvent e) {
-
-    }
-
-    @Override
-    public boolean onSingleTapUp(@NonNull MotionEvent e) {
-        return false;
-    }
-
-    @OptIn(markerClass = UnstableApi.class)
-    @Override
-    public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
-        playerView.hideController();
-        assert e1 != null;
-        float deltaX = e2.getX() - e1.getX();
-        float deltaY = e2.getY() - e1.getY();
-        boolean isHorizontal;
-        Log.d(TAG, "onScroll: nothing ");
-        try {
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                Log.d(TAG, "Horizontal swipe");
-                // Horizontal swipe for playback control
-                if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(distanceX) > SWIPE_VELOCITY_THRESHOLD) {
-                    // Right swipe - Fast forward
-                        Log.d(TAG, "Fast Forward");
-                        Toast.makeText(this, "Fast Forward", Toast.LENGTH_SHORT).show();
-                        //forWard_10Sec();
-                } else {
-                    // Left swipe - Rewind
-                    Log.d(TAG, "Rewind");
-                    Toast.makeText(this, "Rewind", Toast.LENGTH_SHORT).show();
-                    //backWard_10Sec();
-                }
-            } else {
-                Log.d(TAG, "Vertical swipe");
-                // Vertical swipe for volume/brightness control
-                if (Math.abs(deltaY) > SWIPE_THRESHOLD && Math.abs(distanceY) > SWIPE_VELOCITY_THRESHOLD) {
-                    if (e1.getX() < (float) mainLayout.getWidth() / 2) {
-                        // Left half - Brightness
-                        Log.d(TAG, "Brightness");
-                        Toast.makeText(this, "Brightness", Toast.LENGTH_SHORT).show();
-                        //adjustBrightness(-deltaY / mainLayout.getHeight());
-                    } else {
-                        // Right half - Volume
-                        Log.d(TAG, "Volume");
-                        Toast.makeText(this, "Volume", Toast.LENGTH_SHORT).show();
-                        //adjustVolume(-deltaY / mainLayout.getHeight());
-                    }
-                }
-
-            }
-        } catch (
-                Exception e) {
-            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-        return true;
-    }
-
-    @Override
-    public void onLongPress(@NonNull MotionEvent e) {
-        Toast.makeText(this, "Long Pressed", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public boolean onFling(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
-        return false;
-    }
-
 
 }
