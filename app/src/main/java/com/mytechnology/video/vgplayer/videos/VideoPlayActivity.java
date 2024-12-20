@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener/*, GestureDetector.OnGestureListener*/ {
+public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener{
     protected ActivityVideoPlayBinding binding;
     private static final String TAG = VideoPlayActivity.class.getSimpleName() + "1";
 
@@ -61,25 +61,26 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     private TextView trackName;
     int videoFilesAdapterPosition;
     String myVFolder;
-    //private GestureDetector gestureDetector;
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
-    private AudioManager audioManager;
-    private int maxVolume;
-    private static final int SWIPE_THRESHOLD = 100;
-    private static final int SWIPE_VELOCITY_THRESHOLD = 100;
-    private float initialX, initialY;
 
+    boolean isScreenLocked = false;
+
+    // Audio Focus Variables
     android.media.AudioAttributes playbackAttributes;
     AudioFocusRequest focusRequest;
     final Object focusLock = new Object();
-
     boolean playbackDelayed = false;
     boolean playbackNowAuthorized = false;
     boolean resumeOnFocusGain = false;
     public static boolean isVideoPlaying = false;
 
     // swap & zoom variable
+    private AudioManager audioManager;
+    private int maxVolume;
+    private static final int SWIPE_THRESHOLD = 100;
+    private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+    private float initialX, initialY;
     private int displayHeight, displayWidth;
     private boolean start = false;
     private boolean left, right;
@@ -130,7 +131,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
         player = new ExoPlayer.Builder(this).build();
         playerView.setKeepScreenOn(true);
-        playerView.setControllerShowTimeoutMs(1000);
+        playerView.setControllerShowTimeoutMs(3000);
+        playerView.setControllerHideOnTouch(true);
 
         for (int i = 0; i < mvideoModelArrayList.size(); ++i) {
             mediaItemList.add(MediaItem.fromUri(Uri.parse(mvideoModelArrayList.get(i).getPath())));
@@ -140,9 +142,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
         // Setting Auto Fullscreen enabled OR disabled
         playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
-            if (visibility == 8) {
+            if (visibility == View.GONE) {
                 setFullScreen(true);
-            } else if (visibility == 0) {
+            } else if (visibility == View.VISIBLE) {
                 setFullScreen(false);
             }
         });
@@ -156,6 +158,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                    start = false;
                     player.setPlaybackSpeed(PLAY_SPEED_NORMAL);
                 }
                 return super.onTouch(view, motionEvent);
@@ -199,6 +202,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
             @Override
             public void onDoubleTouch(MotionEvent e) {
+                super.onDoubleTouch(e);
                 assert e != null;
                 if (e.getX() < (float) mainLayout.getWidth() / 2) {
                     // Left half - For rewind on Double Tap
@@ -209,26 +213,25 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                     Log.d(TAG, "Fast Forward on Double Tap ");
                     forWard_10Sec();
                 }
-                super.onDoubleTouch(e);
             }
 
             @OptIn(markerClass = UnstableApi.class)
             @Override
             public void onLongTouch(MotionEvent e) {
+                super.onLongTouch(e);
                 if (e.getAction() == MotionEvent.ACTION_DOWN) {
                     player.setPlaybackSpeed(PLAY_SPEED_2X);
                     Log.d(TAG, "Long Touch");
                 }
-                super.onLongTouch(e);
             }
 
             @OptIn(markerClass = UnstableApi.class)
             @Override
             public void onSingleTouch() {
-                playerView.showController();
-                player.setPlaybackSpeed(PLAY_SPEED_NORMAL);
-                Log.d(TAG, "Single Touch");
                 super.onSingleTouch();
+                playerView.showController();
+                Log.d(TAG, "Single Touch");
+
             }
         });
 
@@ -248,8 +251,18 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             }
         });
 
+        /*
+        NOT Implemented Yet
+        LOCK SCREEN functionality
+        */
         lockScreen.setOnClickListener(v -> {
-            lockScreen.setImageResource(R.drawable.lock);
+            isScreenLocked = !isScreenLocked;
+            if (isScreenLocked) {
+                lockScreen.setImageResource(R.drawable.lock);
+            } else {
+                lockScreen.setImageResource(R.drawable.lock_open);
+            }
+
 
         });
 
@@ -448,12 +461,14 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         int volume = (int) (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) + change * maxVolume);
         volume = Math.max(0, Math.min(maxVolume, volume));
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
+        Log.d(TAG, "Volume: " + volume * 100 / maxVolume);
     }
 
     private void adjustBrightness(float change) {
         WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
         layoutParams.screenBrightness = Math.max(0.01f, Math.min(1f, layoutParams.screenBrightness + change));
         getWindow().setAttributes(layoutParams);
+        Log.d(TAG, "Brightness: " + layoutParams.screenBrightness * 100);
     }
 
     @Override

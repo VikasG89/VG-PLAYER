@@ -3,7 +3,6 @@ package com.mytechnology.video.vgplayer.videos;
 import static android.content.Context.MODE_PRIVATE;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,7 +19,6 @@ import com.bumptech.glide.RequestBuilder;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.LayoutRvFilesBinding;
 
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -43,10 +41,7 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         if (preferences != null && !preferences.contains(videoModels.get(position).getName())) {
             videoFilesViewHolder.isNew.setVisibility(View.VISIBLE);
         }
-        videoFilesViewHolder.layout.setOnClickListener(v ->{
-            clickListener.onItemClick(videoFilesViewHolder.getBindingAdapterPosition());
-        });
-
+        videoFilesViewHolder.layout.setOnClickListener(v -> clickListener.onItemClick(videoFilesViewHolder.getBindingAdapterPosition()));
     }
 
     public int getItemCount() {
@@ -58,7 +53,15 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
     }
 
     private String ConvertSecondToHHMMSSString(int nSecondTime) {
-        return LocalTime.MIN.plusSeconds(Math.abs(nSecondTime/1000)).toString();
+        int nSecond = nSecondTime / 1000;
+        int hrs = nSecond / 3600;
+        int min = (nSecond % 3600) / 60;
+        int sec = nSecond % 60;
+        if (hrs == 0) {
+            return String.format(Locale.getDefault(), "%02d:%02d", min, sec);
+        } else {
+            return String.format(Locale.getDefault(), "%02d:%02d:%02d", hrs, min, sec);
+        }
     }
 
     @NonNull

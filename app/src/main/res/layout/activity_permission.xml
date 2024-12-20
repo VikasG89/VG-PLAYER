@@ -18,8 +18,8 @@
         android:textStyle="bold" />
 
     <ImageView
-        android:layout_width="@dimen/dp_160"
-        android:layout_height="@dimen/dp_140"
+        android:layout_width="@dimen/dp_120"
+        android:layout_height="@dimen/dp_120"
         android:backgroundTint="#7a99b1"
         android:contentDescription="@string/app_name"
         android:src="@drawable/splash_screen"

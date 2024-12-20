@@ -17,20 +17,18 @@
         <ImageView
             android:layout_width="@dimen/dp_50"
             android:layout_height="@dimen/dp_50"
-            android:background="#9CCCD3"
             android:contentDescription="@string/image_description"
             android:src="@drawable/folder_icon" />
 
         <TextView
             android:id="@+id/fileTitle"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:paddingStart="@dimen/dp_10"
             android:paddingEnd="@dimen/dp_1"
             android:text="@string/folder_name"
-            android:background="#9CCCD3"
-            android:textColor="@color/black"
+            android:textColor="@color/night_black"
             android:textSize="@dimen/sp_14" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>
