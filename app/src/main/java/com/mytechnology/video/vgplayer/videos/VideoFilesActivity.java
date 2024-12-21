@@ -57,7 +57,22 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                 finish();
             }
         });
+
+
     }
+
+        /*ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.LEFT, ItemTouchHelper.RIGHT) {
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+
+            }
+        });*/
 
     private ArrayList<VideoModel> getVideos(final Context context, String s) {
         final ArrayList<VideoModel> list = new ArrayList<>();

@@ -3,7 +3,9 @@ package com.mytechnology.video.vgplayer.videos;
 import static android.content.Context.MODE_PRIVATE;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,13 +14,16 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
+import com.mytechnology.video.vgplayer.MainActivity;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.LayoutRvFilesBinding;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -42,6 +47,36 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
             videoFilesViewHolder.isNew.setVisibility(View.VISIBLE);
         }
         videoFilesViewHolder.layout.setOnClickListener(v -> clickListener.onItemClick(videoFilesViewHolder.getBindingAdapterPosition()));
+        /*videoFilesViewHolder.layout.setOnLongClickListener(v -> {
+            String[] imageFilename = new String[0];
+
+            File requestFile = new File(imageFilename[position]);
+            *//*
+             * Most file-related method calls need to be in
+             * try-catch blocks.
+             *//*
+            // Use the FileProvider to get a content URI
+            try {
+                fileUri = FileProvider.getUriForFile(
+                        MainActivity.this,
+                        "com.example.myapp.fileprovider",
+                        requestFile);
+            } catch (IllegalArgumentException e) {
+                Log.e("File Selector",
+                        "The selected file can't be shared: " + requestFile.toString());
+            }
+
+
+
+
+
+
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("videos/*");
+            intent.putExtra(Intent.EXTRA_TEXT, videoModels.get(videoFilesViewHolder.getBindingAdapterPosition()).getPath());
+            context.startActivity(intent);
+            return true;
+        });*/
     }
 
     public int getItemCount() {
