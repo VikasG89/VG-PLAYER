@@ -39,6 +39,12 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     }
 
     @Override
+    protected void onStart() {
+
+        super.onStart();
+    }
+
+    @Override
     protected void onCreate(final Bundle bundle) {
         super.onCreate(bundle);
         EdgeToEdge.enable(this);
@@ -50,9 +56,10 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(R.string.title_video);
         recyclerView = binding.videoFilesRV;
         myVFolder = getIntent().getStringExtra("Folder Name");
+        ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(/*R.string.title_video*/ myVFolder);
+
         VideoFilesActivity.videoModels = getVideos(getApplicationContext(), myVFolder);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         final VideoFilesAdapter videoFilesAdapter = new VideoFilesAdapter(this, VideoFilesActivity.videoModels, this);

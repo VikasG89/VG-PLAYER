@@ -376,6 +376,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
     }
 
+
     private void playVideo1(int currentPosition) {
         player.prepare();
         if (preferences != null && preferences.contains(mvideoModelArrayList.get(currentPosition).getName())) {
