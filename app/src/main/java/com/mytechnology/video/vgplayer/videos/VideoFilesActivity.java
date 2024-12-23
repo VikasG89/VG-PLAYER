@@ -8,10 +8,14 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 
+import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.OnBackPressedDispatcher;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -34,12 +38,19 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         VideoFilesActivity.videoModels = new ArrayList<>();
     }
 
+    @Override
     protected void onCreate(final Bundle bundle) {
         super.onCreate(bundle);
-        ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(R.string.title_video);
+        EdgeToEdge.enable(this);
         ActivityVideoFilesBinding inflate = ActivityVideoFilesBinding.inflate(getLayoutInflater());
         binding = inflate;
         setContentView(inflate.getRoot());
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+        ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(R.string.title_video);
         recyclerView = binding.videoFilesRV;
         myVFolder = getIntent().getStringExtra("Folder Name");
         VideoFilesActivity.videoModels = getVideos(getApplicationContext(), myVFolder);
@@ -52,12 +63,27 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             @Override
             public void handleOnBackPressed() {
                 Intent intent = new Intent(VideoFilesActivity.this, MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();
             }
         });
+
+
     }
+
+        /*ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.LEFT, ItemTouchHelper.RIGHT) {
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+
+            }
+        });*/
 
     private ArrayList<VideoModel> getVideos(final Context context, String s) {
         final ArrayList<VideoModel> list = new ArrayList<>();
@@ -102,12 +128,12 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
 
     @Override
     public void onItemClick(int adapterPotion) {
-            Intent intent = new Intent(this, VideoPlayActivity.class);
-            intent.putExtra("position", adapterPotion);
-            intent.putExtra("Parcelable", videoModels);
-            intent.putExtra("Folder Name", myVFolder);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
+        Intent intent = new Intent(this, VideoPlayActivity.class);
+        intent.putExtra("position", adapterPotion);
+        intent.putExtra("Parcelable", videoModels);
+        intent.putExtra("Folder Name", myVFolder);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

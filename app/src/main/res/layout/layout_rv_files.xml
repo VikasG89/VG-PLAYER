@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="@dimen/dp_4"
-    android:backgroundTint="?android:attr/colorBackground"
     fragments:cardCornerRadius="@dimen/dp_5"
     fragments:cardElevation="@dimen/dp_4">
 
@@ -18,8 +17,8 @@
 
         <ImageView
             android:id="@+id/thumbnail"
-            android:layout_width="@dimen/dp_80"
-            android:layout_height="@dimen/dp_45"
+            android:layout_width="@dimen/dp_85"
+            android:layout_height="@dimen/dp_50"
             android:background="@color/black"
             android:contentDescription="@string/image_description"
             android:src="@drawable/baseline_music_note_24"
@@ -31,13 +30,12 @@
         <TextView
             android:id="@+id/fileTitle"
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:background="#9CCCD3"
+            android:layout_height="wrap_content"
             android:padding="@dimen/dp_2"
             android:paddingStart="@dimen/dp_5"
             android:paddingEnd="@dimen/dp_1"
             android:text="@string/folder_name"
-            android:textColor="@color/black"
+            android:textColor="@color/night_black"
             android:textSize="@dimen/sp_11"
             fragments:layout_constraintBottom_toBottomOf="parent"
             fragments:layout_constraintEnd_toEndOf="parent"
@@ -50,18 +48,19 @@
             android:id="@+id/textViewNew"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="#9B2727"
+            android:background="#D91010"
             android:fontFamily="@font/berkshire_swash"
+            android:padding="@dimen/dp_2"
             android:text="@string/_new"
-            android:textColor="#D5D4D4"
+            android:textColor="@color/white"
             android:textSize="@dimen/sp_9"
             android:visibility="invisible"
             fragments:layout_constraintBottom_toBottomOf="@+id/thumbnail"
             fragments:layout_constraintEnd_toStartOf="@+id/fileTitle"
-            fragments:layout_constraintHorizontal_bias="0.02"
+            fragments:layout_constraintHorizontal_bias="1"
             fragments:layout_constraintStart_toStartOf="parent"
             fragments:layout_constraintTop_toTopOf="@+id/thumbnail"
-            fragments:layout_constraintVertical_bias="0.0" />
+            fragments:layout_constraintVertical_bias="0.01" />
 
         <TextView
             android:id="@+id/duration"
@@ -69,7 +68,7 @@
             android:layout_height="wrap_content"
             android:background="@color/black"
             android:text="@string/_00_00"
-            android:textColor="#D5D4D4"
+            android:textColor="@color/white"
             android:textSize="@dimen/sp_10"
             fragments:layout_constraintBottom_toBottomOf="parent"
             fragments:layout_constraintEnd_toEndOf="@+id/thumbnail"
