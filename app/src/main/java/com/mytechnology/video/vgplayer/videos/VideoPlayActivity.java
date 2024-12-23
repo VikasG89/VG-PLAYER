@@ -27,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.OnBackPressedDispatcher;
 import androidx.annotation.NonNull;
@@ -34,6 +35,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -105,10 +108,17 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     @OptIn(markerClass = UnstableApi.class)
     protected void onCreate(final Bundle bundle) {
         super.onCreate(bundle);
+        EdgeToEdge.enable(this);
         final ActivityVideoPlayBinding inflate = ActivityVideoPlayBinding.inflate(getLayoutInflater());
         binding = inflate;
         final ConstraintLayout root = inflate.getRoot();
         setContentView(root);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+
         playerView = binding.videoView;
         mainLayout = binding.main;
         previous = playerView.findViewById(R.id.exo_previous);
@@ -191,7 +201,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                             rightHorizontal = true;
                             Log.d(TAG, "Fast Forward");
                             forWard_10Sec();
-                        } else if (((deltaX) < SWIPE_THRESHOLD) && (distanceX > 0)){
+                        } else if (((deltaX) < SWIPE_THRESHOLD) && (distanceX > 0)) {
                             // Left swipe - Rewind
                             leftHorizontal = true;
                             playerView.showController();
@@ -223,19 +233,18 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                 WindowManager.LayoutParams layoutParams = window.getAttributes();
                                 layoutParams.screenBrightness = displayBrightness / (float) 255;
                                 window.setAttributes(layoutParams);
-                                Log.d(TAG, "Brightness: " + (int)brtPercentage + "%");
+                                Log.d(TAG, "Brightness: " + (int) brtPercentage + "%");
                             } else if (e1.getX() > (float) displayWidth / 2) {
                                 // Right half - Volume
                                 maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
                                 mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                                double calVol = mediaVolume + (-deltaY / displayHeight) * (maxVolume - mediaVolume);
-                                if (calVol > maxVolume) {
-                                    calVol = maxVolume;
-                                } else if (calVol < 1) {
-                                    calVol = 0;
-                                }
-                                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) calVol, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-                                double volPercentage = (calVol / (double) maxVolume) * (double) 100;
+                                double calVol = mediaVolume + (-deltaY / displayHeight) * maxVolume;
+                                calVol = Math.max(0, Math.min(maxVolume, calVol));
+                                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) calVol, 0);
+                                double volPercentage = (calVol / (double) (maxVolume)) * (double) 100;
+                                Log.d(TAG, "Max Volume: " + maxVolume);
+                                Log.d(TAG, "Media Volume: " + mediaVolume);
+                                Log.d(TAG, "Calculated Volume: " + (int) calVol);
                                 Log.d(TAG, "Volume: " + (int) volPercentage + "%");
                             }
                         } else {
@@ -280,10 +289,10 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             @Override
             public void onSingleTouch() {
                 super.onSingleTouch();
-                if (isControllerVisible){
+                if (isControllerVisible) {
                     isControllerVisible = false;
                     playerView.hideController();
-                }else {
+                } else {
                     isControllerVisible = true;
                     playerView.showController();
                 }

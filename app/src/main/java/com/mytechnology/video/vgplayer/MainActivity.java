@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         final ActivityMainBinding inflate = ActivityMainBinding.inflate(getLayoutInflater());
-       binding = inflate;
+        binding = inflate;
         final ConstraintLayout root = inflate.getRoot();
         setContentView(root);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
