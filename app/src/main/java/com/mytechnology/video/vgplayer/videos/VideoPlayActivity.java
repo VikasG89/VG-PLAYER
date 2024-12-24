@@ -40,11 +40,17 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.media3.common.AudioAttributes;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.RenderersFactory;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.ui.PlayerView;
 
 import com.mytechnology.video.vgplayer.R;
@@ -149,7 +155,15 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         mvideoModelArrayList = getIntent().getParcelableArrayListExtra("Parcelable");
         myVFolder = getIntent().getStringExtra("Folder Name");
 
-        player = new ExoPlayer.Builder(this).build();
+        RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
+        player = new ExoPlayer.Builder(this, renderersFactory)
+                .setAudioAttributes(AudioAttributes.DEFAULT, true)
+                .setMediaSourceFactory(new DefaultMediaSourceFactory(this, new DefaultExtractorsFactory()))
+                .setHandleAudioBecomingNoisy(true)
+                .build();
+
+
+        //player = new ExoPlayer.Builder(this).build();
         playerView.setKeepScreenOn(true);
         playerView.setControllerHideOnTouch(true);
 
