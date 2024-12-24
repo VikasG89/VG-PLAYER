@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:fragments="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <androidx.media3.ui.PlayerView
         android:id="@+id/videoView"
@@ -13,12 +13,14 @@
         android:background="@color/music_player_background"
         android:soundEffectsEnabled="true"
         fragments:bar_gravity="center"
-        fragments:bar_height="@dimen/dp_8"
+        fragments:bar_height="@dimen/dp_5"
         fragments:controller_layout_id="@layout/player_controller"
         fragments:layout_constraintBottom_toBottomOf="parent"
         fragments:layout_constraintEnd_toEndOf="parent"
+        fragments:layout_constraintHorizontal_bias="0.0"
         fragments:layout_constraintStart_toStartOf="parent"
         fragments:layout_constraintTop_toTopOf="parent"
+        fragments:layout_constraintVertical_bias="0.0"
         fragments:played_color="@color/teal_200"
         fragments:repeat_toggle_modes="one|all"
         fragments:resize_mode="fit"
@@ -27,4 +29,22 @@
         fragments:use_controller="true">
 
     </androidx.media3.ui.PlayerView>
+
+    <ImageView
+        android:id="@+id/lockScreen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/image_description"
+        android:visibility="visible"
+        android:background="@color/music_player_background"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.037"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.134"
+        app:srcCompat="@drawable/lock_open" />
+
+    <include layout="@layout/layout_swap_gesture" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

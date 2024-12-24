@@ -15,7 +15,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -24,6 +23,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,8 +40,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
-import androidx.media3.common.AudioAttributes;
-import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
@@ -59,6 +57,7 @@ import com.mytechnology.video.vgplayer.utility.OnSwipeListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 
@@ -93,18 +92,21 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     ConstraintLayout layoutSwapGesture;
     private AudioManager audioManager;
     private static final int SWIPE_THRESHOLD = 100;
-    private static final int SWIPE_VELOCITY_THRESHOLD = 100;
-    private float initialX, initialY;
-    private int displayHeight, displayWidth, displayBrightness, mediaVolume, maxVolume;
-    private boolean start = false;
-    private boolean leftHorizontal = false;
-    private boolean rightHorizontal = false;
+    private int displayBrightness, mediaVolume, maxVolume;
     private boolean isControllerVisible = false;
     private static final float PLAY_SPEED_2X = 2f;
     private static final float PLAY_SPEED_NORMAL = 1f;
     ContentResolver contentResolver;
     private Window window;
     boolean value;
+    ConstraintLayout controllerMainLayout;
+
+    // volume and brightness Variable
+    private ConstraintLayout volumeLayout, brightnessLayout;
+    private ImageView imageViewVolume, imageViewBrightness;
+    private ProgressBar progressBarVolume, progressBarBrightness;
+    private TextView txtVolumeText, txBrightnessText;
+    private ImageView playPauseDoubleTap;
 
     public VideoPlayActivity() {
         this.mvideoModelArrayList = new ArrayList<>();
@@ -115,9 +117,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     protected void onCreate(final Bundle bundle) {
         super.onCreate(bundle);
         EdgeToEdge.enable(this);
-        final ActivityVideoPlayBinding inflate = ActivityVideoPlayBinding.inflate(getLayoutInflater());
-        binding = inflate;
-        final ConstraintLayout root = inflate.getRoot();
+        binding = ActivityVideoPlayBinding.inflate(getLayoutInflater());
+        final ConstraintLayout root = binding.getRoot();
         setContentView(root);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -133,17 +134,24 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         forward = playerView.findViewById(R.id.exo_forward);
         playPause = playerView.findViewById(R.id.exo_play_pause);
         trackName = playerView.findViewById(R.id.exo_main_text);
-        lockScreen = playerView.findViewById(R.id.lockScreen);
-        layoutSwapGesture = playerView.findViewById(R.id.layout_swap_gesture);
+        lockScreen = binding.lockScreen;
+        layoutSwapGesture = mainLayout.findViewById(R.id.layout_swap_gesture);
+        controllerMainLayout = playerView.findViewById(R.id.controller_main_layout);
+        volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
+        brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
+        imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
+        imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);
+        progressBarVolume = volumeLayout.findViewById(R.id.progressBarVolume);
+        progressBarBrightness = brightnessLayout.findViewById(R.id.progressBarBrightness);
+        txtVolumeText = volumeLayout.findViewById(R.id.txtVolumeText);
+        txBrightnessText = brightnessLayout.findViewById(R.id.txBrightnessText);
+        playPauseDoubleTap = layoutSwapGesture.findViewById(R.id.imageViewPlayPauseDoubleTap);
+
 
         preferences = getSharedPreferences("video_player", MODE_PRIVATE);
         editor = preferences.edit();
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        displayHeight = displayMetrics.heightPixels;
-        displayWidth = displayMetrics.widthPixels;
-
         playbackAttributes = new android.media.AudioAttributes.Builder()
                 .setUsage(android.media.AudioAttributes.USAGE_GAME)
                 .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build();
@@ -151,39 +159,24 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 .setAudioAttributes(playbackAttributes).setAcceptsDelayedFocusGain(true)
                 .setOnAudioFocusChangeListener(this, Handler.createAsync(Looper.getMainLooper())).build();
 
+        // Getting Intent Data
         videoFilesAdapterPosition = getIntent().getIntExtra("position", 0);
         mvideoModelArrayList = getIntent().getParcelableArrayListExtra("Parcelable");
         myVFolder = getIntent().getStringExtra("Folder Name");
 
-        RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
-        player = new ExoPlayer.Builder(this, renderersFactory)
-                .setAudioAttributes(AudioAttributes.DEFAULT, true)
-                .setMediaSourceFactory(new DefaultMediaSourceFactory(this, new DefaultExtractorsFactory()))
-                .setHandleAudioBecomingNoisy(true)
-                .build();
-
-
-        //player = new ExoPlayer.Builder(this).build();
-        playerView.setKeepScreenOn(true);
-        playerView.setControllerHideOnTouch(true);
-
-        for (int i = 0; i < mvideoModelArrayList.size(); ++i) {
-            mediaItemList.add(MediaItem.fromUri(Uri.parse(mvideoModelArrayList.get(i).getPath())));
-        }
-        player.setMediaItems(mediaItemList);
-        playerView.setPlayer(player);
+        // Initialize ExoPlayer
+        initializeExoPlayer();
 
         // Setting Auto Fullscreen enabled OR disabled
         playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
             if (visibility == View.GONE) {
                 setFullScreen(true);
+                lockScreen.setVisibility(View.INVISIBLE);
             } else if (visibility == View.VISIBLE) {
                 setFullScreen(false);
+                lockScreen.setVisibility(View.VISIBLE);
             }
         });
-
-        // Call Play Video Method
-        playVideo1(videoFilesAdapterPosition);
 
         // SwapGesture implementation
         playerView.setOnTouchListener(new OnSwipeListener(this) {
@@ -191,11 +184,20 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
-                if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                    start = false;
-                    playerView.hideController();
-                    leftHorizontal = false;
-                    player.setPlaybackSpeed(PLAY_SPEED_NORMAL);
+                switch (motionEvent.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        playerView.showController();
+                        lockScreen.setVisibility(View.VISIBLE);
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        // playerView.hideController();
+                        player.setPlaybackSpeed(PLAY_SPEED_NORMAL);
+                        volumeLayout.setVisibility(View.GONE);
+                        brightnessLayout.setVisibility(View.GONE);
+                        if (player != null && player.isPlaying()) {
+                            playPauseDoubleTap.setVisibility(View.GONE);
+                        }
+                        break;
                 }
                 return super.onTouch(view, motionEvent);
             }
@@ -203,73 +205,79 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             @Override
             public void onScrollTouch(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
                 assert e1 != null;
-                start = true;
                 float deltaX = e2.getX() - e1.getX();
                 float deltaY = e2.getY() - e1.getY();
-                double brightnessSpeed = 0.1;
-                try {
-                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                        // Horizontal swipe for playback control
-                        if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
-                            // Right swipe - Fast forward
-                            rightHorizontal = true;
-                            Log.d(TAG, "Fast Forward");
-                            forWard_10Sec();
-                        } else if (((deltaX) < SWIPE_THRESHOLD) && (distanceX > 0)) {
-                            // Left swipe - Rewind
-                            leftHorizontal = true;
-                            playerView.showController();
-                            Log.d(TAG, "Rewind");
-                            backWard_10Sec();
-                        }
-                    } else {
-                        // Vertical swipe for volume/brightness control
-                        value = Settings.System.canWrite(getApplicationContext());
-                        if (value) {
-                            if (e1.getX() < (float) displayWidth / 2) {
-                                // Left half - Brightness
-                                contentResolver = getContentResolver();
-                                window = getWindow();
-                                try {
-                                    android.provider.Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
-                                    displayBrightness = android.provider.Settings.System.getInt(contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS);
-                                } catch (Exception e) {
-                                    Log.e(TAG, Objects.requireNonNull(e.getMessage()));
-                                }
-                                int calBrightness = (int) (displayBrightness - deltaY * brightnessSpeed);
-                                if (calBrightness > 255) {
-                                    calBrightness = 255;
-                                } else if (calBrightness < 1) {
-                                    calBrightness = 1;
-                                }
-                                double brtPercentage = Math.ceil((((double) calBrightness / (double) 255) * (double) 100));
-                                Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, calBrightness);
-                                WindowManager.LayoutParams layoutParams = window.getAttributes();
-                                layoutParams.screenBrightness = displayBrightness / (float) 255;
-                                window.setAttributes(layoutParams);
-                                Log.d(TAG, "Brightness: " + (int) brtPercentage + "%");
-                            } else if (e1.getX() > (float) displayWidth / 2) {
-                                // Right half - Volume
-                                maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-                                mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                                double calVol = mediaVolume + (-deltaY / displayHeight) * maxVolume;
-                                calVol = Math.max(0, Math.min(maxVolume, calVol));
-                                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) calVol, 0);
-                                double volPercentage = (calVol / (double) (maxVolume)) * (double) 100;
-                                Log.d(TAG, "Max Volume: " + maxVolume);
-                                Log.d(TAG, "Media Volume: " + mediaVolume);
-                                Log.d(TAG, "Calculated Volume: " + (int) calVol);
-                                Log.d(TAG, "Volume: " + (int) volPercentage + "%");
+                double brightnessSpeed = 0.01;
+                if (!isScreenLocked) {
+                    try {
+                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                            // Horizontal swipe for playback control
+                            if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
+                                // Right swipe - Fast forward
+                                forWard_10Sec();
+                            } else if (((deltaX) < SWIPE_THRESHOLD) && (distanceX > 0)) {
+                                // Left swipe - Rewind
+                                playerView.showController();
+                                backWard_10Sec();
                             }
                         } else {
-                            // Request permission to change brightness
-                            Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
-                            intent.setData(Uri.parse("package:" + getPackageName()));
-                            startActivityForResult(intent, 6547);
+                            // Vertical swipe for volume/brightness control
+                            value = Settings.System.canWrite(getApplicationContext());
+                            if (value) {
+                                if (e1.getX() < (float) mainLayout.getWidth() / 2) {
+                                    // Left half - Brightness
+                                    contentResolver = getContentResolver();
+                                    window = getWindow();
+                                    try {
+                                        Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
+                                        displayBrightness = Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS);
+                                    } catch (Exception e) {
+                                        Log.e(TAG, Objects.requireNonNull(e.getMessage()));
+                                    }
+                                    int calBrightness = (int) (displayBrightness - deltaY * brightnessSpeed);
+                                    if (calBrightness > 255) {
+                                        calBrightness = 255;
+                                    } else if (calBrightness < 1) {
+                                        calBrightness = 1;
+                                    }
+                                    double brtPercentage = Math.ceil((((double) calBrightness / (double) 255) * (double) 100));
+                                    Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, calBrightness);
+                                    WindowManager.LayoutParams layoutParams = window.getAttributes();
+                                    layoutParams.screenBrightness = displayBrightness / (float) 255;
+                                    window.setAttributes(layoutParams);
+
+                                    brightnessLayout.setVisibility(View.VISIBLE);
+                                    controllerMainLayout.setVisibility(View.GONE);
+                                    playerView.hideController();
+                                    lockScreen.setVisibility(View.GONE);
+                                    progressBarBrightness.setProgress((int) brtPercentage);
+                                    txBrightnessText.setText(String.format(Locale.getDefault(), "%d%%", (int) brtPercentage));
+
+                                } else if (e1.getX() > (float) mainLayout.getWidth() / 2) {
+                                    // Right half - Volume
+                                    maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                                    mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                                    double calVol = mediaVolume + (-deltaY / ((double) mainLayout.getHeight() / 2)) * maxVolume;
+                                    calVol = Math.max(0, Math.min(maxVolume, calVol));
+                                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) calVol, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+                                    double volPercentage = (calVol / (double) (maxVolume)) * (double) 100;
+                                    volumeLayout.setVisibility(View.VISIBLE);
+                                    playerView.hideController();
+                                    lockScreen.setVisibility(View.GONE);
+                                    controllerMainLayout.setVisibility(View.GONE);
+                                    progressBarVolume.setProgress((int) volPercentage);
+                                    txtVolumeText.setText(String.format(Locale.getDefault(), "%d%%", (int) volPercentage));
+                                }
+                            } else {
+                                // Request permission to change brightness
+                                Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
+                                intent.setData(Uri.parse("package:" + getPackageName()));
+                                startActivityForResult(intent, 6547);
+                            }
                         }
+                    } catch (Exception e) {
+                        Toast.makeText(VideoPlayActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
-                } catch (Exception e) {
-                    Toast.makeText(VideoPlayActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
                 super.onScrollTouch(e1, e2, distanceX, distanceY);
             }
@@ -278,14 +286,27 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             public void onDoubleTouch(MotionEvent e) {
                 super.onDoubleTouch(e);
                 assert e != null;
-                if (e.getX() < (float) mainLayout.getWidth() / 2) {
-                    // Left half - For rewind on Double Tap
-                    Log.d(TAG, "Rewind on Double Tap");
-                    backWard_10Sec();
-                } else if (e.getX() > (float) mainLayout.getWidth() / 2) {
-                    // Right half - For Fast Forward on Double Tap
-                    Log.d(TAG, "Fast Forward on Double Tap ");
-                    forWard_10Sec();
+                boolean left = e.getX() < (float) mainLayout.getWidth() / 3;
+                boolean right = e.getX() > ((float) mainLayout.getWidth() / 3) * 2;
+                boolean center = e.getX() > (float) mainLayout.getWidth() / 3 && e.getX() < ((float) mainLayout.getWidth() / 3) * 2;
+                if (!isScreenLocked) {
+                    if (left) {
+                        // Left half - For rewind on Double Tap
+                        backWard_10Sec();
+                    } else if (right) {
+                        // Right half - For Fast Forward on Double Tap
+                        forWard_10Sec();
+                    } else if (center) {
+                        if (player.isPlaying()) {
+                            pauseVideo();
+                            playPauseDoubleTap.setVisibility(View.VISIBLE);
+                            playPauseDoubleTap.setImageResource(R.drawable.play);
+                        } else {
+                            playVideo();
+                            playPauseDoubleTap.setVisibility(View.VISIBLE);
+                            playPauseDoubleTap.setImageResource(R.drawable.pause);
+                        }
+                    }
                 }
             }
 
@@ -294,8 +315,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             public void onLongTouch(MotionEvent e) {
                 super.onLongTouch(e);
                 if (e.getAction() == MotionEvent.ACTION_DOWN) {
-                    player.setPlaybackSpeed(PLAY_SPEED_2X);
-                    Log.d(TAG, "Long Touch");
+                    if (!isScreenLocked) {
+                        player.setPlaybackSpeed(PLAY_SPEED_2X);
+                    }
                 }
             }
 
@@ -303,15 +325,17 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             @Override
             public void onSingleTouch() {
                 super.onSingleTouch();
-                if (isControllerVisible) {
-                    isControllerVisible = false;
-                    playerView.hideController();
-                } else {
-                    isControllerVisible = true;
-                    playerView.showController();
+                if (!isScreenLocked) {
+                    if (isControllerVisible) {
+                        isControllerVisible = false;
+                        playerView.hideController();
+                        lockScreen.setVisibility(View.INVISIBLE);
+                    } else {
+                        isControllerVisible = true;
+                        playerView.showController();
+                        lockScreen.setVisibility(View.VISIBLE);
+                    }
                 }
-                Log.d(TAG, "Single Touch");
-
             }
         });
 
@@ -335,18 +359,20 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         NOT Implemented Yet
         LOCK SCREEN functionality
         */
-        /*lockScreen.setOnClickListener(v -> {
+        lockScreen.setOnClickListener(v -> {
             isScreenLocked = !isScreenLocked;
             if (isScreenLocked) {
                 lockScreen.setImageResource(R.drawable.lock);
                 lockScreen.setVisibility(View.VISIBLE);
                 playerView.hideController();
-                playerView.setClickable(false);
+                controllerMainLayout.setVisibility(View.GONE);
             } else {
                 lockScreen.setImageResource(R.drawable.lock_open);
+                lockScreen.setVisibility(View.VISIBLE);
                 playerView.showController();
+                controllerMainLayout.setVisibility(View.VISIBLE);
             }
-        });*/
+        });
 
         player.addListener(new Player.Listener() {
             @Override
@@ -390,6 +416,26 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
     }
 
+    @OptIn(markerClass = UnstableApi.class)
+    private void initializeExoPlayer() {
+        RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
+        player = new ExoPlayer.Builder(this, renderersFactory)
+                .setMediaSourceFactory(new DefaultMediaSourceFactory(this, new DefaultExtractorsFactory()))
+                .setHandleAudioBecomingNoisy(true)
+                .build();
+        //player = new ExoPlayer.Builder(this).build();
+        playerView.setKeepScreenOn(true);
+        playerView.setControllerHideOnTouch(true);
+
+        for (int i = 0; i < mvideoModelArrayList.size(); ++i) {
+            mediaItemList.add(MediaItem.fromUri(Uri.parse(mvideoModelArrayList.get(i).getPath())));
+        }
+        player.setMediaItems(mediaItemList);
+        playerView.setPlayer(player);
+
+        // Call Play Video Method
+        playVideo1(videoFilesAdapterPosition);
+    }
 
     private void playVideo1(int currentPosition) {
         player.prepare();
@@ -404,6 +450,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             player.seekTo(currentPosition, 0);
         }
         player.setPlayWhenReady(true);
+        //player.play();
         trackName.setText(mvideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
 
         int res = audioManager.requestAudioFocus(focusRequest);
@@ -521,7 +568,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
     private void backWard_10Sec() {
         long currentPosition = player.getCurrentPosition();
-        long num = currentPosition - 1000;
+        long num = currentPosition - 10000;
         if (num < 0) {
             player.seekTo(0);
         } else {
