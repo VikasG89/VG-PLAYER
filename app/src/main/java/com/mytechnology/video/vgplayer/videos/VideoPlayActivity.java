@@ -136,7 +136,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         trackName = playerView.findViewById(R.id.exo_main_text);
         lockScreen = binding.lockScreen;
         layoutSwapGesture = mainLayout.findViewById(R.id.layout_swap_gesture);
-        controllerMainLayout = playerView.findViewById(R.id.controller_main_layout);
+        controllerMainLayout = playerView.findViewById(R.id.layout_player_controller);
         volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
         brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
         imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
@@ -186,11 +186,12 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        playerView.showController();
-                        lockScreen.setVisibility(View.VISIBLE);
+                        if (controllerMainLayout.getVisibility() == View.VISIBLE) {
+                            playerView.showController();
+                            lockScreen.setVisibility(View.VISIBLE);
+                        }
                         break;
                     case MotionEvent.ACTION_UP:
-                        // playerView.hideController();
                         player.setPlaybackSpeed(PLAY_SPEED_NORMAL);
                         volumeLayout.setVisibility(View.GONE);
                         brightnessLayout.setVisibility(View.GONE);
@@ -247,12 +248,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                     window.setAttributes(layoutParams);
 
                                     brightnessLayout.setVisibility(View.VISIBLE);
-                                    controllerMainLayout.setVisibility(View.GONE);
-                                    playerView.hideController();
-                                    lockScreen.setVisibility(View.GONE);
                                     progressBarBrightness.setProgress((int) brtPercentage);
                                     txBrightnessText.setText(String.format(Locale.getDefault(), "%d%%", (int) brtPercentage));
-
+                                    hideControllerSwipe();
                                 } else if (e1.getX() > (float) mainLayout.getWidth() / 2) {
                                     // Right half - Volume
                                     maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -262,11 +260,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) calVol, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
                                     double volPercentage = (calVol / (double) (maxVolume)) * (double) 100;
                                     volumeLayout.setVisibility(View.VISIBLE);
-                                    playerView.hideController();
-                                    lockScreen.setVisibility(View.GONE);
-                                    controllerMainLayout.setVisibility(View.GONE);
                                     progressBarVolume.setProgress((int) volPercentage);
                                     txtVolumeText.setText(String.format(Locale.getDefault(), "%d%%", (int) volPercentage));
+                                    hideControllerSwipe();
                                 }
                             } else {
                                 // Request permission to change brightness
@@ -325,16 +321,21 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             @Override
             public void onSingleTouch() {
                 super.onSingleTouch();
+                isControllerVisible = !isControllerVisible;
                 if (!isScreenLocked) {
                     if (isControllerVisible) {
-                        isControllerVisible = false;
                         playerView.hideController();
+                        controllerMainLayout.setVisibility(View.GONE);
                         lockScreen.setVisibility(View.INVISIBLE);
                     } else {
-                        isControllerVisible = true;
                         playerView.showController();
                         lockScreen.setVisibility(View.VISIBLE);
+                        controllerMainLayout.setVisibility(View.VISIBLE);
                     }
+                } else {
+                    lockScreen.setVisibility(View.VISIBLE);
+                    playerView.hideController();
+                    controllerMainLayout.setVisibility(View.GONE);
                 }
             }
         });
@@ -414,6 +415,14 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             }
         });
 
+    }
+
+    @OptIn(markerClass = UnstableApi.class)
+    private void hideControllerSwipe() {
+        controllerMainLayout.setVisibility(View.GONE);
+        lockScreen.setVisibility(View.GONE);
+        playerView.hideController();
+        setFullScreen(true);
     }
 
     @OptIn(markerClass = UnstableApi.class)
