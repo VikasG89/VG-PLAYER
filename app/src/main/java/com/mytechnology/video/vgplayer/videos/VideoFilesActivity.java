@@ -1,5 +1,6 @@
 package com.mytechnology.video.vgplayer.videos;
 
+import android.app.ComponentCaller;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -7,22 +8,31 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.OnBackPressedDispatcher;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.media3.common.util.UnstableApi;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.mytechnology.video.vgplayer.MainActivity;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoFilesBinding;
+import com.mytechnology.video.vgplayer.utility.ShareHelper;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -33,6 +43,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     String myVFolder;
     RecyclerView recyclerView;
     String sortOrder;
+    ShareHelper shareHelper;
 
     static {
         VideoFilesActivity.videoModels = new ArrayList<>();
@@ -58,7 +69,9 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         });
         recyclerView = binding.videoFilesRV;
         myVFolder = getIntent().getStringExtra("Folder Name");
-        ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(/*R.string.title_video*/ myVFolder);
+        ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(myVFolder);
+
+        shareHelper = new ShareHelper(VideoFilesActivity.this);
 
         VideoFilesActivity.videoModels = getVideos(getApplicationContext(), myVFolder);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -76,21 +89,40 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             }
         });
 
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
+
 
     }
 
-        /*ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.LEFT, ItemTouchHelper.RIGHT) {
+    ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
+        @Override
+        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            return false;
+        }
 
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-                return false;
+        @Override
+        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            if (direction == ItemTouchHelper.RIGHT) {
+                try {
+                    shareHelper.shareVideo(VideoFilesActivity.videoModels.get(viewHolder.getBindingAdapterPosition()).getPath());
+                } catch (Exception e) {
+                    Toast.makeText(VideoFilesActivity.this, "Error " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    throw new RuntimeException(e);
+                }
             }
 
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
 
-            }
-        });*/
+        }
+    };
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data, @NonNull ComponentCaller caller) {
+        super.onActivityResult(requestCode, resultCode, data, caller);
+        if (requestCode == 222333) {
+            recreate();
+        }
+    }
 
     private ArrayList<VideoModel> getVideos(final Context context, String s) {
         final ArrayList<VideoModel> list = new ArrayList<>();
@@ -133,6 +165,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         return list;
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     @Override
     public void onItemClick(int adapterPotion) {
         Intent intent = new Intent(this, VideoPlayActivity.class);

@@ -6,6 +6,8 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.media.AudioFocusRequest;
@@ -61,6 +63,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 
+@UnstableApi
 public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener {
     protected ActivityVideoPlayBinding binding;
     private static final String TAG = VideoPlayActivity.class.getSimpleName() + "1";
@@ -70,7 +73,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     PlayerView playerView;
     private ExoPlayer player;
     private ConstraintLayout mainLayout;
-    protected ImageView previous, next, backWard, forward, playPause, lockScreen;
+    protected ImageView previous, next, backWard, forward, playPause, lockScreen, extraMenu;
     private TextView trackName;
     int videoFilesAdapterPosition;
     String myVFolder;
@@ -146,6 +149,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         txtVolumeText = volumeLayout.findViewById(R.id.txtVolumeText);
         txBrightnessText = brightnessLayout.findViewById(R.id.txBrightnessText);
         playPauseDoubleTap = layoutSwapGesture.findViewById(R.id.imageViewPlayPauseDoubleTap);
+        extraMenu = playerView.findViewById(R.id.exo_settings_listview);
 
 
         preferences = getSharedPreferences("video_player", MODE_PRIVATE);
@@ -375,6 +379,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             }
         });
 
+        extraMenu.setOnClickListener(v -> {
+        });
+
         player.addListener(new Player.Listener() {
             @Override
             public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
@@ -435,6 +442,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         //player = new ExoPlayer.Builder(this).build();
         playerView.setKeepScreenOn(true);
         playerView.setControllerHideOnTouch(true);
+        playerView.setShowSubtitleButton(true);
 
         for (int i = 0; i < mvideoModelArrayList.size(); ++i) {
             mediaItemList.add(MediaItem.fromUri(Uri.parse(mvideoModelArrayList.get(i).getPath())));
@@ -592,6 +600,15 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             insetsController.hide(WindowInsetsCompat.Type.systemBars());
         } else {
             insetsController.show(WindowInsetsCompat.Type.systemBars());
+        }
+    }
+
+    @SuppressLint("SourceLockedOrientationActivity")
+    private void changeOrientation() {
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } else {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
     }
 

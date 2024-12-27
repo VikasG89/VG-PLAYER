@@ -28,6 +28,17 @@
         android:supportsRtl="true"
         android:theme="@style/VGPlayer"
         tools:targetApi="35">
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/paths" />
+        </provider>
+
         <activity
             android:name=".MediaPlayer"
             android:configChanges="orientation|screenSize|smallestScreenSize|navigation|locale|layoutDirection|screenLayout|uiMode|density|fontScale|colorMode"
