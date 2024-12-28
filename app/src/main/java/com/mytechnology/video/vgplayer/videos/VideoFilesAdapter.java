@@ -3,27 +3,26 @@ package com.mytechnology.video.vgplayer.videos;
 import static android.content.Context.MODE_PRIVATE;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
-import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
-import com.mytechnology.video.vgplayer.MainActivity;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.LayoutRvFilesBinding;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -38,49 +37,50 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         this.clickListener = clickListener;
     }
 
-    public void onBindViewHolder(final VideoFilesViewHolder videoFilesViewHolder, final int position) {
-        ((RequestBuilder<?>) Glide.with(context).load(videoModels.get(position).getPath()).centerCrop()).into(videoFilesViewHolder.thumbnail);
-        videoFilesViewHolder.fileName.setText(videoModels.get(position).getName());
-        videoFilesViewHolder.duration.setText(ConvertSecondToHHMMSSString(videoModels.get(position).getDuration()));
+    public void onBindViewHolder(final VideoFilesViewHolder viewHolder, final int position) {
+        ((RequestBuilder<?>) Glide.with(context).load(videoModels.get(position).getPath()).centerCrop()).into(viewHolder.thumbnail);
+        viewHolder.fileName.setText(videoModels.get(position).getName());
+        viewHolder.duration.setText(ConvertSecondToHHMMSSString(videoModels.get(position).getDuration()));
         SharedPreferences preferences = context.getSharedPreferences("video_player", MODE_PRIVATE);
         if (preferences != null && !preferences.contains(videoModels.get(position).getName())) {
-            videoFilesViewHolder.isNew.setVisibility(View.VISIBLE);
+            viewHolder.isNew.setVisibility(View.VISIBLE);
+        }else {
+            viewHolder.isNew.setVisibility(View.GONE);
         }
-        videoFilesViewHolder.layout.setOnClickListener(v -> clickListener.onItemClick(videoFilesViewHolder.getBindingAdapterPosition()));
-        /*videoFilesViewHolder.layout.setOnLongClickListener(v -> {
-            String[] imageFilename = new String[0];
+        viewHolder.layout.setOnClickListener(v -> clickListener.onItemClick(viewHolder.getBindingAdapterPosition()));
 
-            File requestFile = new File(imageFilename[position]);
-            *//*
-             * Most file-related method calls need to be in
-             * try-catch blocks.
-             *//*
-            // Use the FileProvider to get a content URI
-            try {
-                fileUri = FileProvider.getUriForFile(
-                        MainActivity.this,
-                        "com.example.myapp.fileprovider",
-                        requestFile);
-            } catch (IllegalArgumentException e) {
-                Log.e("File Selector",
-                        "The selected file can't be shared: " + requestFile.toString());
-            }
+        viewHolder.filesMenuItem.setOnClickListener(this::setUpMenuButton);
 
-
-
-
-
-
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("videos/*");
-            intent.putExtra(Intent.EXTRA_TEXT, videoModels.get(videoFilesViewHolder.getBindingAdapterPosition()).getPath());
-            context.startActivity(intent);
-            return true;
-        });*/
     }
 
     public int getItemCount() {
         return videoModels.size();
+    }
+
+    private void setUpMenuButton(View view) {
+        PopupMenu popupMenu = new PopupMenu(context, view);
+        MenuInflater inflater = popupMenu.getMenuInflater();
+        inflater.inflate(R.menu.files_menu, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(this::handleMenuItemClick);
+        popupMenu.show();
+    }
+
+    private boolean handleMenuItemClick(MenuItem item) {
+        /*if (item.getItemId() == R.id.main_menu_myProfile) {
+            startIntent(MainActivity.this, ProfileActivity.class);
+        } else if (item.getItemId() == R.id.main_menu_ContactUs) {
+            startIntent(MainActivity.this, FAQsActivity.class);
+        } else if (item.getItemId() == R.id.main_menu_RateUs) {
+            startIntent(MainActivity.this, ReviewActivity.class);
+        } else if (item.getItemId() == R.id.main_menu_license_privacy) {
+            showLicenses();
+        } else if (item.getItemId() == R.id.menu_theme) {
+            final Intent intent = new Intent(MainActivity.this, ThemeChangeActivity.class);
+            intent.putExtra("BasTu", "Hi!");
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }*/
+        return true;
     }
 
     public interface ItemClickListener {
@@ -110,6 +110,7 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         CardView layout;
         ImageView thumbnail;
         TextView duration, isNew;
+        ImageButton filesMenuItem;
 
         public VideoFilesViewHolder(final View view) {
             super(view);
@@ -120,6 +121,7 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
             layout = binding.filesLayoutRow;
             duration = binding.duration;
             isNew = binding.textViewNew;
+            filesMenuItem = binding.filesMenuItem;
         }
     }
 }

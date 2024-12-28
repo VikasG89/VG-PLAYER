@@ -4,10 +4,16 @@ import android.app.ComponentCaller;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -18,7 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -31,28 +37,22 @@ import com.mytechnology.video.vgplayer.MainActivity;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoFilesBinding;
 import com.mytechnology.video.vgplayer.utility.ShareHelper;
+import com.mytechnology.video.vgplayer.utility.SwipeToShareCallback;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Objects;
 
 public class VideoFilesActivity extends AppCompatActivity implements VideoFilesAdapter.ItemClickListener {
-    static ArrayList<VideoModel> videoModels;
+    public static ArrayList<VideoModel> videoModels;
     VideoFilesAdapter adapter;
     ActivityVideoFilesBinding binding;
     String myVFolder;
     RecyclerView recyclerView;
     String sortOrder;
-    ShareHelper shareHelper;
+    private final Object lock = new Object();
 
     static {
         VideoFilesActivity.videoModels = new ArrayList<>();
-    }
-
-    @Override
-    protected void onStart() {
-
-        super.onStart();
     }
 
     @Override
@@ -71,8 +71,6 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         myVFolder = getIntent().getStringExtra("Folder Name");
         ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(myVFolder);
 
-        shareHelper = new ShareHelper(VideoFilesActivity.this);
-
         VideoFilesActivity.videoModels = getVideos(getApplicationContext(), myVFolder);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         final VideoFilesAdapter videoFilesAdapter = new VideoFilesAdapter(this, VideoFilesActivity.videoModels, this);
@@ -89,39 +87,28 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             }
         });
 
-        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToShareCallback(VideoFilesActivity.this, lock));
         itemTouchHelper.attachToRecyclerView(recyclerView);
 
-
     }
-
-    ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
-        @Override
-        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-            return false;
-        }
-
-        @Override
-        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-            if (direction == ItemTouchHelper.RIGHT) {
-                try {
-                    shareHelper.shareVideo(VideoFilesActivity.videoModels.get(viewHolder.getBindingAdapterPosition()).getPath());
-                } catch (Exception e) {
-                    Toast.makeText(VideoFilesActivity.this, "Error " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    throw new RuntimeException(e);
-                }
-            }
-
-
-        }
-    };
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data, @NonNull ComponentCaller caller) {
         super.onActivityResult(requestCode, resultCode, data, caller);
         if (requestCode == 222333) {
-            recreate();
+            startActivity(getIntent());
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.videofiles_main_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        return super.onOptionsItemSelected(item);
     }
 
     private ArrayList<VideoModel> getVideos(final Context context, String s) {

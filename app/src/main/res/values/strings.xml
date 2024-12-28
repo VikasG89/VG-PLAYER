@@ -16,4 +16,15 @@
     <string name="textview">Text View</string>
     <string name="name_of_song">Name of Song</string>
     <string name="_new">New</string>
+    <string name="play">Play</string>
+    <string name="share">Share</string>
+    <string name="search">Search</string>
+    <string name="properties">Properties</string>
+    <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+    <string name="sort_by">Sort By</string>
+    <string name="sort_by_name">By Name</string>
+    <string name="sort_by_date">By Date</string>
+    <string name="sort_by_size">By Size</string>
+    <string name="sort_by_duration">By Duration</string>
 </resources>

@@ -149,7 +149,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         txtVolumeText = volumeLayout.findViewById(R.id.txtVolumeText);
         txBrightnessText = brightnessLayout.findViewById(R.id.txBrightnessText);
         playPauseDoubleTap = layoutSwapGesture.findViewById(R.id.imageViewPlayPauseDoubleTap);
-        extraMenu = playerView.findViewById(R.id.exo_settings_listview);
+       /* extraMenu = playerView.findViewById(R.id.exo_settings_listview);*/
 
 
         preferences = getSharedPreferences("video_player", MODE_PRIVATE);
@@ -379,8 +379,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             }
         });
 
-        extraMenu.setOnClickListener(v -> {
-        });
+        /*extraMenu.setOnClickListener(v -> {
+        });*/
 
         player.addListener(new Player.Listener() {
             @Override
@@ -391,6 +391,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                     editor.putLong(mvideoModelArrayList.get(player.getCurrentMediaItemIndex() - 1).getName(), -1);
                     editor.commit();
                     //Toast.makeText(VideoPlayActivity.this, "Play from Start!", Toast.LENGTH_SHORT).show();
+                } else if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
+                    savePreference(player.getCurrentMediaItemIndex());
                 }
             }
 
@@ -439,10 +441,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 .setMediaSourceFactory(new DefaultMediaSourceFactory(this, new DefaultExtractorsFactory()))
                 .setHandleAudioBecomingNoisy(true)
                 .build();
-        //player = new ExoPlayer.Builder(this).build();
-        playerView.setKeepScreenOn(true);
-        playerView.setControllerHideOnTouch(true);
-        playerView.setShowSubtitleButton(true);
+
 
         for (int i = 0; i < mvideoModelArrayList.size(); ++i) {
             mediaItemList.add(MediaItem.fromUri(Uri.parse(mvideoModelArrayList.get(i).getPath())));
@@ -467,7 +466,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             player.seekTo(currentPosition, 0);
         }
         player.setPlayWhenReady(true);
-        //player.play();
         trackName.setText(mvideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
 
         int res = audioManager.requestAudioFocus(focusRequest);
@@ -482,6 +480,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 playbackNowAuthorized = false;
             }
         }
+        savePreference(player.getCurrentPosition());
     }
 
     private void playVideo() {

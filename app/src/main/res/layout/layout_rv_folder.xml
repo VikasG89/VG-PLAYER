@@ -1,13 +1,13 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:fragments="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/folder_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="@dimen/dp_4"
-    fragments:cardCornerRadius="@dimen/dp_5"
-    fragments:cardElevation="@dimen/dp_5">
+    app:cardCornerRadius="@dimen/dp_5"
+    app:cardElevation="@dimen/dp_5">
 
     <LinearLayout
         android:layout_width="fill_parent"
