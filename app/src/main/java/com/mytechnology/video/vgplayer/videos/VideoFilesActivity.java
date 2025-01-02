@@ -1,16 +1,14 @@
 package com.mytechnology.video.vgplayer.videos;
 
+import static com.mytechnology.video.vgplayer.utility.CommonFunctions.getVideosWithSort;
+
 import android.app.ComponentCaller;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -44,7 +42,6 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     SearchView searchView;
     String myVFolder;
     RecyclerView recyclerView;
-    String sortOrder;
     private final Object lock = new Object();
 
     static {
@@ -63,12 +60,12 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        searchView = binding.searchView;
+        searchView = binding.searchViewVideoFiles;
         recyclerView = binding.videoFilesRV;
         myVFolder = getIntent().getStringExtra("Folder Name");
         ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(myVFolder);
 
-        videoModels = getVideos(getApplicationContext(), myVFolder);
+        videoModels = getVideosWithSort(getApplicationContext(), myVFolder);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         final VideoFilesAdapter videoFilesAdapter = new VideoFilesAdapter(this, VideoFilesActivity.videoModels, this);
         adapter = videoFilesAdapter;
@@ -107,13 +104,14 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         SharedPreferences preferences = getSharedPreferences("com.mytechnology.video.vgplayer.sort_Video", MODE_PRIVATE);
         if (item.getItemId() == R.id.mainMenu_search) {
-            //Toast.makeText(this, "Search pressed", Toast.LENGTH_SHORT).show();
-
+            searchView.setVisibility(View.VISIBLE);
+            item.setVisible(false);
             searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                 @Override
                 public boolean onQueryTextSubmit(String query) {
                     return false;
                 }
+
                 @Override
                 public boolean onQueryTextChange(String newText) {
                     if (newText != null) {
@@ -122,6 +120,11 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     }
                     return false;
                 }
+            });
+            searchView.setOnCloseListener(() -> {
+                item.setVisible(true);
+                searchView.setVisibility(View.GONE);
+                return true;
             });
 
         } else if (item.getItemId() == R.id.menu_sort_by_name) {
@@ -138,53 +141,6 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             startActivity(getIntent());
         }
         return super.onOptionsItemSelected(item);
-    }
-
-
-
-    private ArrayList<VideoModel> getVideos(final Context context, String folderName) {
-        final ArrayList<VideoModel> list = new ArrayList<>();
-        Uri uri;
-        if (Build.VERSION.SDK_INT >= 29) {
-            uri = MediaStore.Video.Media.getContentUri("external");
-        } else {
-            uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-        }
-        folderName = "%" + folderName + "%";
-        final String string = context.getSharedPreferences("com.mytechnology.video.vgplayer.sort_Video", MODE_PRIVATE)
-                .getString("AUDIO_SORT", "abcd");
-        switch (string) {
-            case "byName":
-                sortOrder = "_display_name ASC";
-                break;
-            case "byDate":
-                sortOrder = "date_added DESC";
-                break;
-            case "bySize":
-                sortOrder = "_size DESC";
-                break;
-            case "byDuration":
-                sortOrder = "duration DESC";
-        }
-        final Cursor query = context.getContentResolver().query(uri, new String[]{"_data", "_display_name", "date_added", "duration", "_size"},
-                "_data like?", new String[]{folderName}, sortOrder);
-        if (query != null) {
-            final int columnIndexOrThrow = query.getColumnIndexOrThrow("_data");
-            final int columnIndexOrThrow2 = query.getColumnIndexOrThrow("_display_name");
-            final int columnIndexOrThrow3 = query.getColumnIndexOrThrow("date_added");
-            final int columnIndexOrThrow4 = query.getColumnIndexOrThrow("duration");
-            final int columnIndexOrThrow5 = query.getColumnIndexOrThrow("_size");
-            while (query.moveToNext()) {
-                String path = query.getString(columnIndexOrThrow);
-                if (columnIndexOrThrow5 > 1) {
-                    list.add(new VideoModel(path, query.getString(columnIndexOrThrow2), query.getString(columnIndexOrThrow3),
-                            query.getInt(columnIndexOrThrow4), query.getInt(columnIndexOrThrow5)));
-                }
-            }
-        }
-        assert query != null;
-        query.close();
-        return list;
     }
 
     @OptIn(markerClass = UnstableApi.class)

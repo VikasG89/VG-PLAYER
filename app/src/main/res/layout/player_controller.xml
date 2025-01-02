@@ -205,12 +205,12 @@
                 android:text="@string/textview"
                 android:textColor="#ffffff"
                 android:textSize="@dimen/sp_11"
-                app:layout_constraintEnd_toStartOf="@+id/exo_settings_listview"
+                app:layout_constraintEnd_toStartOf="@+id/setting_list_Menu"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <ImageView
-                android:id="@+id/exo_settings_listview"
+                android:id="@+id/setting_list_Menu"
                 android:layout_width="@dimen/dp_10"
                 android:layout_height="@dimen/dp_30"
                 android:layout_marginStart="@dimen/dp_15"

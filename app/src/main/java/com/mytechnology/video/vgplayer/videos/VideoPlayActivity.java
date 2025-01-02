@@ -1,11 +1,15 @@
 package com.mytechnology.video.vgplayer.videos;
 
+import static com.mytechnology.video.vgplayer.utility.CommonFunctions.ConvertBytesIntoMbGb;
+import static com.mytechnology.video.vgplayer.utility.CommonFunctions.ConvertSecondToHHMMSSString;
+
 import android.annotation.SuppressLint;
 import android.app.ComponentCaller;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -29,7 +33,9 @@ import androidx.activity.OnBackPressedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -55,6 +61,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoPlayBinding;
 import com.mytechnology.video.vgplayer.utility.OnSwipeListener;
+import com.mytechnology.video.vgplayer.utility.ShareHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +92,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     boolean isScreenLocked = false;
 
     // Audio Focus Variables
-    android.media.AudioAttributes playbackAttributes;
+    AudioAttributes playbackAttributes;
     AudioFocusRequest focusRequest;
     final Object focusLock = new Object();
     boolean playbackDelayed = false;
@@ -146,23 +153,23 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         controllerMainLayout = playerView.findViewById(R.id.layout_player_controller);
         volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
         brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
-       /* imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
-        imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);*/
+        ImageView imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
+        ImageView imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);
         progressBarVolume = volumeLayout.findViewById(R.id.progressBarVolume);
         progressBarBrightness = brightnessLayout.findViewById(R.id.progressBarBrightness);
         txtVolumeText = volumeLayout.findViewById(R.id.txtVolumeText);
         txBrightnessText = brightnessLayout.findViewById(R.id.txBrightnessText);
         playPauseDoubleTap = layoutSwapGesture.findViewById(R.id.imageViewPlayPauseDoubleTap);
-        /* extraMenu = playerView.findViewById(R.id.exo_settings_listview);*/
+        extraMenu = playerView.findViewById(R.id.setting_list_Menu);
 
 
         preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
         editor = preferences.edit();
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        playbackAttributes = new android.media.AudioAttributes.Builder()
-                .setUsage(android.media.AudioAttributes.USAGE_GAME)
-                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build();
+        playbackAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
         focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(playbackAttributes).setAcceptsDelayedFocusGain(true)
                 .setOnAudioFocusChangeListener(this, Handler.createAsync(Looper.getMainLooper())).build();
@@ -251,6 +258,13 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                         calBrightness = 1;
                                     }
                                     double brtPercentage = Math.ceil((((double) calBrightness / (double) 255) * (double) 100));
+                                    if (brtPercentage < 30) {
+                                        imageViewBrightness.setImageResource(R.drawable.brightness_low);
+                                    } else if (brtPercentage > 31 && brtPercentage < 70) {
+                                        imageViewBrightness.setImageResource(R.drawable.brightness_medium);
+                                    } else if (brtPercentage > 71) {
+                                        imageViewBrightness.setImageResource(R.drawable.brightness_high);
+                                    }
                                     Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, calBrightness);
                                     WindowManager.LayoutParams layoutParams = window.getAttributes();
                                     layoutParams.screenBrightness = displayBrightness / (float) 255;
@@ -269,6 +283,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) calVol, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
                                     double volPercentage = (calVol / (double) (maxVolume)) * (double) 100;
                                     volumeLayout.setVisibility(View.VISIBLE);
+                                    if (volPercentage < 1) {
+                                        imageViewVolume.setImageResource(R.drawable.volume_off);
+                                    }
                                     progressBarVolume.setProgress((int) volPercentage);
                                     txtVolumeText.setText(String.format(Locale.getDefault(), "%d%%", (int) volPercentage));
                                     hideControllerSwipe();
@@ -384,8 +401,37 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             }
         });
 
-        /*extraMenu.setOnClickListener(v -> {
-        });*/
+        extraMenu.setOnClickListener(v -> {
+            PopupMenu popupMenu = new PopupMenu(VideoPlayActivity.this, extraMenu);
+            popupMenu.getMenuInflater().inflate(R.menu.video_play_menu_list, popupMenu.getMenu());
+            popupMenu.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == R.id.video_play_list_share){
+                    if (player.isPlaying()){
+                        pauseVideo();
+                    }
+                    ShareHelper shareHelper = new ShareHelper(VideoPlayActivity.this);
+                    shareHelper.shareVideo(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath());
+                } else if (item.getItemId() == R.id.video_play_list_properties) {
+                    if (player.isPlaying()){
+                        pauseVideo();
+                    }
+                    AlertDialog dialog = new AlertDialog.Builder(VideoPlayActivity.this).create();
+                    dialog.setTitle("Properties - ");
+                    dialog.setMessage("Name:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName() + "\n\n"
+                            + "Video Location:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath() + "\n\n"
+                            + "Size:  " + ConvertBytesIntoMbGb(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getSize()) + "\n\n"
+                            + "Duration:  " + ConvertSecondToHHMMSSString(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getDuration()) + "\n\n"
+                            + "Date Added Or Modified:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getDateAdded() + "\n\n");
+                    dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, which) -> {
+                        playVideo();
+                        dialog1.dismiss();
+                    });
+                    dialog.show();
+                }
+                return true;
+            });
+            popupMenu.show();
+        });
 
         player.addListener(new Player.Listener() {
             @Override

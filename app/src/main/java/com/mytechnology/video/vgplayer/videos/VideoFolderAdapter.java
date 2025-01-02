@@ -1,15 +1,12 @@
 package com.mytechnology.video.vgplayer.videos;
 
 import static android.content.Context.MODE_PRIVATE;
+import static com.mytechnology.video.vgplayer.utility.CommonFunctions.getVideos;
 import static com.mytechnology.video.vgplayer.videos.VideoPlayActivity.MY_SHARED_PREFS_VIDEO;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
-import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -63,37 +60,6 @@ public class VideoFolderAdapter extends RecyclerView.Adapter<VideoFolderAdapter.
         return videoFolderList.size();
     }
 
-
-
-    private ArrayList<VideoModel> getVideos(final Context context, String folderName) {
-        final ArrayList<VideoModel> list = new ArrayList<>();
-        Uri uri;
-        if (Build.VERSION.SDK_INT >= 29) {
-            uri = MediaStore.Video.Media.getContentUri("external");
-        } else {
-            uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-        }
-        folderName = "%" + folderName + "%";
-        final Cursor query = context.getContentResolver().query(uri, new String[]{"_data", "_display_name", "date_added", "duration", "_size"},
-                "_data like?", new String[]{folderName}, null);
-        if (query != null) {
-            final int columnIndexOrThrow = query.getColumnIndexOrThrow("_data");
-            final int columnIndexOrThrow2 = query.getColumnIndexOrThrow("_display_name");
-            final int columnIndexOrThrow3 = query.getColumnIndexOrThrow("date_added");
-            final int columnIndexOrThrow4 = query.getColumnIndexOrThrow("duration");
-            final int columnIndexOrThrow5 = query.getColumnIndexOrThrow("_size");
-            while (query.moveToNext()) {
-                String path = query.getString(columnIndexOrThrow);
-                if (columnIndexOrThrow5 > 1)
-                    list.add(new VideoModel(path, query.getString(columnIndexOrThrow2), query.getString(columnIndexOrThrow3),
-                            query.getInt(columnIndexOrThrow4), query.getInt(columnIndexOrThrow5)));
-            }
-        }
-        assert query != null;
-        query.close();
-        return list;
-    }
-
     public static class VideoFolderViewHolder extends RecyclerView.ViewHolder {
         private final TextView fileName;
         private final CardView layout;
@@ -102,11 +68,8 @@ public class VideoFolderAdapter extends RecyclerView.Adapter<VideoFolderAdapter.
         public VideoFolderViewHolder(final View view) {
             super(view);
             LayoutRvFolderBinding vFolderBinding = LayoutRvFolderBinding.bind(view);
-
             fileName = vFolderBinding.fileTitle;
-
             layout = vFolderBinding.folderLayout;
-
             isNewVideoAvailable = vFolderBinding.textViewNewFolder;
         }
     }
