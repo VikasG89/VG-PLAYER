@@ -5,12 +5,14 @@
     <item android:id="@+id/menuItem_play"
         android:title="@string/play"
         app:showAsAction="ifRoom"
-        android:icon="@drawable/play" />
+        android:icon="@drawable/play"
+        android:iconTint="@color/night_black"/>
 
     <item android:id="@+id/menuItem_share"
         android:title="@string/share"
         app:showAsAction="ifRoom"
-        android:icon="@drawable/share_icon" />
+        android:icon="@drawable/share_icon"
+        android:iconTint="@color/night_black"/>
 
     <!--<item android:id="@+id/menuItem_delete"
         android:title="@string/delete"
@@ -25,5 +27,6 @@
     <item android:id="@+id/menuItem_details"
         android:title="@string/properties"
         app:showAsAction="ifRoom"
-        android:icon="@drawable/info_icon" />
+        android:icon="@drawable/info_icon"
+        android:iconTint="@color/night_black"/>
 </menu>

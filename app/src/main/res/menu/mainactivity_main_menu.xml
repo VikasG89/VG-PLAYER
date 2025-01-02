@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item android:id="@+id/mainMenu_setting"
+        android:icon="@drawable/settings"
+        android:iconTint="@color/night_black"
+        android:title="@string/settings"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/mainMenu_share"
+        android:icon="@drawable/share_icon"
+        android:iconTint="@color/night_black"
+        android:title="@string/share_app"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/mainMenu_rateUs"
+        android:icon="@drawable/star_rate_us_icon"
+        android:iconTint="@color/night_black"
+        android:title="@string/rate_us"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/mainMenu_about"
+        android:icon="@drawable/info_icon"
+        android:iconTint="@color/night_black"
+        android:title="@string/about"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/mainMenu_licences"
+        android:icon="@drawable/info_icon"
+        android:iconTint="@color/night_black"
+        android:title="@string/licences"
+        app:showAsAction="ifRoom" />
+
+</menu>

@@ -6,10 +6,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -19,8 +15,6 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -46,13 +40,18 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
+import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RenderersFactory;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.extractor.DefaultExtractorsFactory;
+import androidx.media3.extractor.ExtractorsFactory;
+import androidx.media3.extractor.flac.FlacExtractor;
+import androidx.media3.extractor.mp3.Mp3Extractor;
 import androidx.media3.ui.PlayerView;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoPlayBinding;
 import com.mytechnology.video.vgplayer.utility.OnSwipeListener;
@@ -65,18 +64,21 @@ import java.util.Objects;
 
 @UnstableApi
 public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener {
+
+    public static final String MY_SHARED_PREFS_VIDEO = "video_player";
+
     protected ActivityVideoPlayBinding binding;
     private static final String TAG = VideoPlayActivity.class.getSimpleName() + "1";
-
     private final List<MediaItem> mediaItemList;
-    private ArrayList<VideoModel> mvideoModelArrayList;
+    //private final List<MediaSource> mediaSourceList;
+    private ArrayList<VideoModel> mVideoModelArrayList;
     PlayerView playerView;
     private ExoPlayer player;
     private ConstraintLayout mainLayout;
     protected ImageView previous, next, backWard, forward, playPause, lockScreen, extraMenu;
     private TextView trackName;
     int videoFilesAdapterPosition;
-    String myVFolder;
+    static String myVFolder;
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
 
@@ -106,13 +108,15 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
     // volume and brightness Variable
     private ConstraintLayout volumeLayout, brightnessLayout;
-    private ImageView imageViewVolume, imageViewBrightness;
+    //private ImageView imageViewVolume, imageViewBrightness;
     private ProgressBar progressBarVolume, progressBarBrightness;
     private TextView txtVolumeText, txBrightnessText;
     private ImageView playPauseDoubleTap;
 
+
     public VideoPlayActivity() {
-        this.mvideoModelArrayList = new ArrayList<>();
+        //this.mediaSourceList = new ArrayList<>();
+        this.mVideoModelArrayList = new ArrayList<>();
         this.mediaItemList = new ArrayList<>();
     }
 
@@ -142,17 +146,17 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         controllerMainLayout = playerView.findViewById(R.id.layout_player_controller);
         volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
         brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
-        imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
-        imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);
+       /* imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
+        imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);*/
         progressBarVolume = volumeLayout.findViewById(R.id.progressBarVolume);
         progressBarBrightness = brightnessLayout.findViewById(R.id.progressBarBrightness);
         txtVolumeText = volumeLayout.findViewById(R.id.txtVolumeText);
         txBrightnessText = brightnessLayout.findViewById(R.id.txBrightnessText);
         playPauseDoubleTap = layoutSwapGesture.findViewById(R.id.imageViewPlayPauseDoubleTap);
-       /* extraMenu = playerView.findViewById(R.id.exo_settings_listview);*/
+        /* extraMenu = playerView.findViewById(R.id.exo_settings_listview);*/
 
 
-        preferences = getSharedPreferences("video_player", MODE_PRIVATE);
+        preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
         editor = preferences.edit();
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -165,8 +169,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
         // Getting Intent Data
         videoFilesAdapterPosition = getIntent().getIntExtra("position", 0);
-        mvideoModelArrayList = getIntent().getParcelableArrayListExtra("Parcelable");
+        mVideoModelArrayList = getIntent().getParcelableArrayListExtra("Parcelable");
         myVFolder = getIntent().getStringExtra("Folder Name");
+
 
         // Initialize ExoPlayer
         initializeExoPlayer();
@@ -259,7 +264,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                     // Right half - Volume
                                     maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
                                     mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                                    double calVol = mediaVolume + (-deltaY / ((double) mainLayout.getHeight() / 2)) * maxVolume;
+                                    double calVol = mediaVolume + (-deltaY / ((double) mainLayout.getHeight() /*/ 2*/)) * maxVolume;
                                     calVol = Math.max(0, Math.min(maxVolume, calVol));
                                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) calVol, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
                                     double volPercentage = (calVol / (double) (maxVolume)) * (double) 100;
@@ -387,12 +392,21 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
                 Player.Listener.super.onMediaItemTransition(mediaItem, reason);
                 if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                    trackName.setText(mvideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
-                    editor.putLong(mvideoModelArrayList.get(player.getCurrentMediaItemIndex() - 1).getName(), -1);
+                    trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
+                    editor.putLong(mVideoModelArrayList.get(player.getCurrentMediaItemIndex() - 1).getPath(), -1);
                     editor.commit();
-                    //Toast.makeText(VideoPlayActivity.this, "Play from Start!", Toast.LENGTH_SHORT).show();
+                    // If video previously played then show snack bar
+                    if (preferences.contains(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath())) {
+                        Snackbar.make(mainLayout, "Play from Start!", 4000)
+                                .setAction("Yes", v -> {
+                                    player.seekTo(0);
+                                    playVideo();
+                                })
+                                .show();
+                    }
                 } else if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
                     savePreference(player.getCurrentMediaItemIndex());
+                    finish();
                 }
             }
 
@@ -415,6 +429,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                     player.stop();
                 }
                 player.release();
+                //mediaSourceList.clear();
                 mediaItemList.clear();
                 Intent intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
                 intent.putExtra("Folder Name", myVFolder);
@@ -436,27 +451,35 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
     @OptIn(markerClass = UnstableApi.class)
     private void initializeExoPlayer() {
-        RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
+        RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true)
+                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
+        ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
+                .setMp3ExtractorFlags(Mp3Extractor.FLAG_ENABLE_INDEX_SEEKING)
+                .setFlacExtractorFlags(FlacExtractor.FLAG_DISABLE_ID3_METADATA);
+        DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(this)
+                .setDataSourceFactory(new DefaultDataSource.Factory(this));
         player = new ExoPlayer.Builder(this, renderersFactory)
-                .setMediaSourceFactory(new DefaultMediaSourceFactory(this, new DefaultExtractorsFactory()))
+                .setMediaSourceFactory(new DefaultMediaSourceFactory(this, extractorsFactory))
+                .setMediaSourceFactory(mediaSourceFactory)
                 .setHandleAudioBecomingNoisy(true)
                 .build();
 
-
-        for (int i = 0; i < mvideoModelArrayList.size(); ++i) {
-            mediaItemList.add(MediaItem.fromUri(Uri.parse(mvideoModelArrayList.get(i).getPath())));
+        for (int i = 0; i < mVideoModelArrayList.size(); ++i) {
+           /* MediaSource mediaSource = mediaSourceFactory.createMediaSource(MediaItem.fromUri(Uri.parse(mVideoModelArrayList.get(i).getPath())));
+            mediaSourceList.add(mediaSource);*/
+            mediaItemList.add(MediaItem.fromUri(Uri.parse(mVideoModelArrayList.get(i).getPath())));
         }
         player.setMediaItems(mediaItemList);
+        //player.setMediaSources(mediaSourceList);
         playerView.setPlayer(player);
-
         // Call Play Video Method
         playVideo1(videoFilesAdapterPosition);
     }
 
     private void playVideo1(int currentPosition) {
         player.prepare();
-        if (preferences != null && preferences.contains(mvideoModelArrayList.get(currentPosition).getName())) {
-            long position1 = preferences.getLong(mvideoModelArrayList.get(currentPosition).getName(), 0);
+        if (preferences != null && preferences.contains(mVideoModelArrayList.get(currentPosition).getPath())) {
+            long position1 = preferences.getLong(mVideoModelArrayList.get(currentPosition).getPath(), 0);
             if (position1 != player.getDuration()) {
                 player.seekTo(currentPosition, position1);
             } else {
@@ -465,8 +488,17 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         } else {
             player.seekTo(currentPosition, 0);
         }
+
+        if (preferences.contains(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath())) {
+            Snackbar.make(mainLayout, "Play from Start!", 4000)
+                    .setAction("Yes", v -> {
+                        player.seekTo(0);
+                        playVideo();
+                    }).show();
+        }
+
         player.setPlayWhenReady(true);
-        trackName.setText(mvideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
+        trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
 
         int res = audioManager.requestAudioFocus(focusRequest);
         synchronized (focusLock) {
@@ -548,27 +580,16 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         player.stop();
         int position = player.getCurrentMediaItemIndex();
         position++;
-        if (position > mvideoModelArrayList.size() - 1) {
-            position = mvideoModelArrayList.size() - 1;
+        if (position > mVideoModelArrayList.size() - 1) {
+            position = mVideoModelArrayList.size() - 1;
             playVideo1(position);
         } else {
             playVideo1(position);
         }
     }
 
-    private void clearSurface() {
-        SurfaceView surfaceView = new SurfaceView(this);
-        player.clearVideoSurfaceHolder(surfaceView.getHolder());
-        SurfaceHolder holder = surfaceView.getHolder();
-        Canvas canvas = holder.lockCanvas();
-        canvas.drawColor(Color.BLACK);
-        holder.unlockCanvasAndPost(canvas);
-        player.setVideoSurfaceHolder(holder);
-        Log.d(TAG, "Surface Cleared");
-    }
-
     private void savePreference(long currentPlayedTime) {
-        editor.putLong(mvideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName(), currentPlayedTime);
+        editor.putLong(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), currentPlayedTime);
         editor.commit();
     }
 
@@ -602,14 +623,14 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         }
     }
 
-    @SuppressLint("SourceLockedOrientationActivity")
+   /* @SuppressLint("SourceLockedOrientationActivity")
     private void changeOrientation() {
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         } else {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
-    }
+    }*/
 
     @Override
     protected void onPause() {

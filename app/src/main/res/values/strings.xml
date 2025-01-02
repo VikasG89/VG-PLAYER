@@ -27,4 +27,11 @@
     <string name="sort_by_date">By Date</string>
     <string name="sort_by_size">By Size</string>
     <string name="sort_by_duration">By Duration</string>
+    <string name="filename">File Name</string>
+    <string name="share_app">Share App Link</string>
+    <string name="rate_us">Rate Us</string>
+    <string name="licences">Licences</string>
+    <string name="about">About Us</string>
+    <string name="settings">Settings</string>
+    <string name="_100">100%</string>
 </resources>

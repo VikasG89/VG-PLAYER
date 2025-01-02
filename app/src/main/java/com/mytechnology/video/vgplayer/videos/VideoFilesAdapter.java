@@ -1,27 +1,33 @@
 package com.mytechnology.video.vgplayer.videos;
 
 import static android.content.Context.MODE_PRIVATE;
+import static com.mytechnology.video.vgplayer.videos.VideoPlayActivity.MY_SHARED_PREFS_VIDEO;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.cardview.widget.CardView;
+import androidx.annotation.OptIn;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.media3.common.util.UnstableApi;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.LayoutRvFilesBinding;
+import com.mytechnology.video.vgplayer.utility.ShareHelper;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -30,26 +36,30 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
     Context context;
     ArrayList<VideoModel> videoModels;
     final ItemClickListener clickListener;
+    ArrayList<VideoModel> videoModelFull;
 
     public VideoFilesAdapter(final Context context, final ArrayList<VideoModel> videoModels, ItemClickListener clickListener) {
         this.context = context;
         this.videoModels = videoModels;
         this.clickListener = clickListener;
+        this.videoModelFull = new ArrayList<>(videoModels);
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     public void onBindViewHolder(final VideoFilesViewHolder viewHolder, final int position) {
         ((RequestBuilder<?>) Glide.with(context).load(videoModels.get(position).getPath()).centerCrop()).into(viewHolder.thumbnail);
         viewHolder.fileName.setText(videoModels.get(position).getName());
         viewHolder.duration.setText(ConvertSecondToHHMMSSString(videoModels.get(position).getDuration()));
-        SharedPreferences preferences = context.getSharedPreferences("video_player", MODE_PRIVATE);
-        if (preferences != null && !preferences.contains(videoModels.get(position).getName())) {
-            viewHolder.isNew.setVisibility(View.VISIBLE);
-        }else {
-            viewHolder.isNew.setVisibility(View.GONE);
+        Log.d("TAG", "onBindViewHolder 2 : " + videoModels.get(position).getPath());
+        SharedPreferences preferences = context.getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
+        if (preferences != null && !preferences.contains(videoModels.get(position).getPath())) {
+            viewHolder.isNewVideoAvailable.setVisibility(View.VISIBLE);
+        } else {
+            viewHolder.isNewVideoAvailable.setVisibility(View.GONE);
         }
         viewHolder.layout.setOnClickListener(v -> clickListener.onItemClick(viewHolder.getBindingAdapterPosition()));
 
-        viewHolder.filesMenuItem.setOnClickListener(this::setUpMenuButton);
+        viewHolder.filesMenuItem.setOnClickListener(v -> setUpMenuButton(v, viewHolder));
 
     }
 
@@ -57,30 +67,37 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         return videoModels.size();
     }
 
-    private void setUpMenuButton(View view) {
+    private void setUpMenuButton(View view, VideoFilesViewHolder holder) {
         PopupMenu popupMenu = new PopupMenu(context, view);
         MenuInflater inflater = popupMenu.getMenuInflater();
         inflater.inflate(R.menu.files_menu, popupMenu.getMenu());
-        popupMenu.setOnMenuItemClickListener(this::handleMenuItemClick);
+        popupMenu.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.menuItem_play) {
+                holder.layout.performClick();
+            } else if (item.getItemId() == R.id.menuItem_share) {
+                ShareHelper shareHelper = new ShareHelper(context);
+                shareHelper.shareVideo(videoModels.get(holder.getBindingAdapterPosition()).getPath());
+            } else if (item.getItemId() == R.id.menuItem_details) {
+                Toast.makeText(context, "Details", Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        });
         popupMenu.show();
     }
 
-    private boolean handleMenuItemClick(MenuItem item) {
-        /*if (item.getItemId() == R.id.main_menu_myProfile) {
-            startIntent(MainActivity.this, ProfileActivity.class);
-        } else if (item.getItemId() == R.id.main_menu_ContactUs) {
-            startIntent(MainActivity.this, FAQsActivity.class);
-        } else if (item.getItemId() == R.id.main_menu_RateUs) {
-            startIntent(MainActivity.this, ReviewActivity.class);
-        } else if (item.getItemId() == R.id.main_menu_license_privacy) {
-            showLicenses();
-        } else if (item.getItemId() == R.id.menu_theme) {
-            final Intent intent = new Intent(MainActivity.this, ThemeChangeActivity.class);
-            intent.putExtra("BasTu", "Hi!");
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-        }*/
-        return true;
+    @SuppressLint("NotifyDataSetChanged")
+    public void filter(String text) {
+        videoModels.clear();
+        if (text.isEmpty()) {
+            videoModels.addAll(videoModelFull);
+        } else {
+            text = text.toLowerCase();
+            for (VideoModel item : videoModelFull) {
+                if (item.getName().toLowerCase().contains(text))
+                    videoModels.add(item);
+            }
+        }
+        notifyDataSetChanged();
     }
 
     public interface ItemClickListener {
@@ -107,9 +124,9 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
     public static class VideoFilesViewHolder extends RecyclerView.ViewHolder {
         LayoutRvFilesBinding binding;
         TextView fileName;
-        CardView layout;
+        ConstraintLayout layout;
         ImageView thumbnail;
-        TextView duration, isNew;
+        TextView duration, isNewVideoAvailable;
         ImageButton filesMenuItem;
 
         public VideoFilesViewHolder(final View view) {
@@ -120,7 +137,7 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
             thumbnail = binding.thumbnail;
             layout = binding.filesLayoutRow;
             duration = binding.duration;
-            isNew = binding.textViewNew;
+            isNewVideoAvailable = binding.textViewNew;
             filesMenuItem = binding.filesMenuItem;
         }
     }

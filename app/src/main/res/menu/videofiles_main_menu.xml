@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <item
         android:id="@+id/mainMenu_search"
         android:icon="@drawable/search_icon"
+        android:iconTint="@color/night_black"
         android:title="@string/search"
         app:showAsAction="always" />
+
     <item
         android:id="@+id/mainMenu_sortBy"
         android:icon="@drawable/sort_icon"
+        android:iconTint="@color/night_black"
         android:title="@string/sort_by"
         app:showAsAction="ifRoom">
         <menu>

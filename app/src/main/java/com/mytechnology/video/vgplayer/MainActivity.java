@@ -6,8 +6,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
@@ -23,17 +27,11 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    VideoFolderAdapter adapter;
-    ActivityMainBinding binding;
-    RecyclerView recyclerView;
-    ArrayList<String> videoFolderList;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         final ActivityMainBinding inflate = ActivityMainBinding.inflate(getLayoutInflater());
-        binding = inflate;
         final ConstraintLayout root = inflate.getRoot();
         setContentView(root);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -42,13 +40,59 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        videoFolderList = getVideoFolder(this);
-        (recyclerView = binding.videoFolderRV).setLayoutManager(new LinearLayoutManager(this));
+        ArrayList<String> videoFolderList = getVideoFolder(this);
+        RecyclerView recyclerView;
+        (recyclerView = inflate.videoFolderRV).setLayoutManager(new LinearLayoutManager(this));
         final VideoFolderAdapter videoFolderAdapter = new VideoFolderAdapter(this, videoFolderList);
-        adapter = videoFolderAdapter;
         recyclerView.setAdapter(videoFolderAdapter);
 
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.mainactivity_main_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.mainMenu_setting) {
+            Toast.makeText(this, "Setting pressed", Toast.LENGTH_SHORT).show();
+            /*
+
+            Todo Stuff for search video files
+
+             */
+        } else if (item.getItemId() == R.id.mainMenu_share) {
+            Toast.makeText(this, "Share App Link pressed", Toast.LENGTH_SHORT).show();
+            /*
+
+            Todo Stuff for search video files
+
+             */
+        } else if (item.getItemId() == R.id.mainMenu_rateUs) {
+            Toast.makeText(this, "Rate Us pressed", Toast.LENGTH_SHORT).show();
+            /*
+
+            Todo Stuff for search video files
+
+             */
+        } else if (item.getItemId() == R.id.mainMenu_about) {
+            Toast.makeText(this, "About pressed", Toast.LENGTH_SHORT).show();
+            /*
+
+            Todo Stuff for search video files
+
+             */
+        } else if (item.getItemId() == R.id.mainMenu_licences) {
+            Toast.makeText(this, "Licences pressed", Toast.LENGTH_SHORT).show();
+            /*
+
+            Todo Stuff for search video files
+
+             */
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private ArrayList<String> getVideoFolder(final Context context) {
@@ -75,4 +119,7 @@ public class MainActivity extends AppCompatActivity {
         query.close();
         return list;
     }
+
+
+
 }
