@@ -2,13 +2,16 @@ package com.mytechnology.video.vgplayer.videos;
 
 import static android.content.Context.MODE_PRIVATE;
 import static androidx.appcompat.app.AlertDialog.Builder;
-import static com.mytechnology.video.vgplayer.utility.CommonFunctions.ConvertBytesIntoMbGb;
 import static com.mytechnology.video.vgplayer.utility.CommonFunctions.ConvertSecondToHHMMSSString;
 import static com.mytechnology.video.vgplayer.videos.VideoPlayActivity.MY_SHARED_PREFS_VIDEO;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.Icon;
+import android.media.MediaMetadataRetriever;
+import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
@@ -31,7 +34,12 @@ import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.LayoutRvFilesBinding;
 import com.mytechnology.video.vgplayer.utility.ShareHelper;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.VideoFilesViewHolder> {
     Context context;
@@ -80,12 +88,29 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
                 shareHelper.shareVideo(videoModels.get(holder.getBindingAdapterPosition()).getPath());
             } else if (item.getItemId() == R.id.menuItem_details) {
                 AlertDialog dialog = new Builder(context).create();
-                dialog.setTitle("Properties - ");
+                dialog.setIcon(R.drawable.propertise_info);
+                dialog.setTitle("Properties: ");
+                String height;
+                String width;
+                try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
+                    retriever.setDataSource(videoModels.get(holder.getBindingAdapterPosition()).getPath());
+                    height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+                    width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                File file = new File(videoModels.get(holder.getBindingAdapterPosition()).getPath());
+                // Get last modified date
+                long lastModified = file.lastModified();
+                //Format the date and time
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+                String formattedDate = sdf.format(new Date(lastModified));
                 dialog.setMessage("Name:  " + videoModels.get(holder.getBindingAdapterPosition()).getName() + "\n\n"
                         + "Video Location:  " + videoModels.get(holder.getBindingAdapterPosition()).getPath() + "\n\n"
-                        + "Size:  " + ConvertBytesIntoMbGb(videoModels.get(holder.getBindingAdapterPosition()).getSize()) + "\n\n"
+                        + "Resolution:  " + width + " X " + height + "\n\n"
+                        + "Size:  " + Formatter.formatFileSize(context, videoModels.get(holder.getBindingAdapterPosition()).getSize()) + "\n\n"
                         + "Duration:  " + ConvertSecondToHHMMSSString(videoModels.get(holder.getBindingAdapterPosition()).getDuration()) + "\n\n"
-                        + "Date Added Or Modified:  " + videoModels.get(holder.getBindingAdapterPosition()).getDateAdded() + "\n\n");
+                        + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" +formattedDate + "\n\n");
                 dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, which) -> dialog1.dismiss());
                 dialog.show();
             }

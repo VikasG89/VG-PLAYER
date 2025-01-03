@@ -4,33 +4,25 @@ import static android.content.Context.MODE_PRIVATE;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
+import android.text.format.Formatter;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.media3.exoplayer.ExoPlayer;
 
 import com.mytechnology.video.vgplayer.videos.VideoModel;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
 
 public class CommonFunctions {
-    public static String ConvertBytesIntoMbGb(int nBytes) {
-        if (nBytes == 0) {
-            return "0 Bytes";
-        }
-        int gb = nBytes / 1024 / 1024 / 1024;
-        int mb = (nBytes - gb * 1024 * 1024 * 1024) / 1024 / 1024;
-        int kb = (nBytes - gb * 1024 * 1024 * 1024 - mb * 1024 * 1024) / 1024;
-        if (gb == 0) {
-            if (mb == 0) {
-                return kb + " KB";
-            }
-            return mb + "." + kb + " MB";
-        } else {
-            return gb + "." + mb + " GB";
-        }
-    }
-
     public static String ConvertSecondToHHMMSSString(int nSecondTime) {
         int nSecond = nSecondTime / 1000;
         int hrs = nSecond / 3600;

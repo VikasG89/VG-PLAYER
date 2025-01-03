@@ -1,6 +1,5 @@
 package com.mytechnology.video.vgplayer.videos;
 
-import static com.mytechnology.video.vgplayer.utility.CommonFunctions.ConvertBytesIntoMbGb;
 import static com.mytechnology.video.vgplayer.utility.CommonFunctions.ConvertSecondToHHMMSSString;
 
 import android.annotation.SuppressLint;
@@ -12,11 +11,13 @@ import android.content.SharedPreferences;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -63,7 +64,11 @@ import com.mytechnology.video.vgplayer.databinding.ActivityVideoPlayBinding;
 import com.mytechnology.video.vgplayer.utility.OnSwipeListener;
 import com.mytechnology.video.vgplayer.utility.ShareHelper;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -73,7 +78,6 @@ import java.util.Objects;
 public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener {
 
     public static final String MY_SHARED_PREFS_VIDEO = "video_player";
-
     protected ActivityVideoPlayBinding binding;
     private static final String TAG = VideoPlayActivity.class.getSimpleName() + "1";
     private final List<MediaItem> mediaItemList;
@@ -115,11 +119,10 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
     // volume and brightness Variable
     private ConstraintLayout volumeLayout, brightnessLayout;
-    //private ImageView imageViewVolume, imageViewBrightness;
+    private ImageView imageViewVolume, imageViewBrightness;
     private ProgressBar progressBarVolume, progressBarBrightness;
     private TextView txtVolumeText, txBrightnessText;
     private ImageView playPauseDoubleTap;
-
 
     public VideoPlayActivity() {
         //this.mediaSourceList = new ArrayList<>();
@@ -153,15 +156,14 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         controllerMainLayout = playerView.findViewById(R.id.layout_player_controller);
         volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
         brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
-        ImageView imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
-        ImageView imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);
+        imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
+        imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);
         progressBarVolume = volumeLayout.findViewById(R.id.progressBarVolume);
         progressBarBrightness = brightnessLayout.findViewById(R.id.progressBarBrightness);
         txtVolumeText = volumeLayout.findViewById(R.id.txtVolumeText);
         txBrightnessText = brightnessLayout.findViewById(R.id.txBrightnessText);
         playPauseDoubleTap = layoutSwapGesture.findViewById(R.id.imageViewPlayPauseDoubleTap);
         extraMenu = playerView.findViewById(R.id.setting_list_Menu);
-
 
         preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
         editor = preferences.edit();
@@ -178,7 +180,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         videoFilesAdapterPosition = getIntent().getIntExtra("position", 0);
         mVideoModelArrayList = getIntent().getParcelableArrayListExtra("Parcelable");
         myVFolder = getIntent().getStringExtra("Folder Name");
-
 
         // Initialize ExoPlayer
         initializeExoPlayer();
@@ -285,6 +286,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                     volumeLayout.setVisibility(View.VISIBLE);
                                     if (volPercentage < 1) {
                                         imageViewVolume.setImageResource(R.drawable.volume_off);
+                                    } else {
+                                        imageViewVolume.setImageResource(R.drawable.volume_up);
                                     }
                                     progressBarVolume.setProgress((int) volPercentage);
                                     txtVolumeText.setText(String.format(Locale.getDefault(), "%d%%", (int) volPercentage));
@@ -382,10 +385,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             }
         });
 
-        /*
-        NOT Implemented Yet
-        LOCK SCREEN functionality
-        */
         lockScreen.setOnClickListener(v -> {
             isScreenLocked = !isScreenLocked;
             if (isScreenLocked) {
@@ -417,11 +416,28 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                     }
                     AlertDialog dialog = new AlertDialog.Builder(VideoPlayActivity.this).create();
                     dialog.setTitle("Properties - ");
+                    dialog.setIcon(R.drawable.propertise_info);
+                    String height;
+                    String width;
+                    try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
+                        retriever.setDataSource(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath());
+                        height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+                        width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    File file = new File(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath());
+                    // Get last modified date
+                    long lastModified = file.lastModified();
+                    //Format the date and time
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+                    String formattedDate = sdf.format(new Date(lastModified));
                     dialog.setMessage("Name:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName() + "\n\n"
                             + "Video Location:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath() + "\n\n"
-                            + "Size:  " + ConvertBytesIntoMbGb(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getSize()) + "\n\n"
+                            + "Resolution:  " + width + " X " + height + "\n\n"
+                            + "Size:  " + Formatter.formatFileSize(VideoPlayActivity.this, mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getSize()) + "\n\n"
                             + "Duration:  " + ConvertSecondToHHMMSSString(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getDuration()) + "\n\n"
-                            + "Date Added Or Modified:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getDateAdded() + "\n\n");
+                            + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" +formattedDate  + "\n\n");
                     dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, which) -> {
                         playVideo();
                         dialog1.dismiss();
