@@ -47,7 +47,6 @@ public class SwipeToShareCallback extends ItemTouchHelper.SimpleCallback {
         synchronized (lock) {
             isProcessing = true;
             // Perform some processing
-
             if (direction == ItemTouchHelper.RIGHT) {
                 try {
                     shareHelper.shareVideo(VideoFilesActivity.videoModels.get(viewHolder.getBindingAdapterPosition()).getPath());

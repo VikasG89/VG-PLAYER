@@ -49,4 +49,7 @@ dependencies {
     implementation (libs.media3.ui)
 
     implementation(libs.glide)
+
+    implementation(libs.review)
+    implementation(libs.play.services.oss.licenses)
 }

@@ -1,6 +1,8 @@
 package com.mytechnology.video.vgplayer;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -20,7 +22,10 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.oss.licenses.OssLicensesMenuActivity;
 import com.mytechnology.video.vgplayer.databinding.ActivityMainBinding;
+import com.mytechnology.video.vgplayer.extras.AppSettings;
+import com.mytechnology.video.vgplayer.extras.ReviewActivity;
 import com.mytechnology.video.vgplayer.videos.VideoFolderAdapter;
 
 import java.util.ArrayList;
@@ -57,40 +62,29 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.mainMenu_setting) {
-            Toast.makeText(this, "Setting pressed", Toast.LENGTH_SHORT).show();
-            /*
-
-            Todo Stuff for search video files
-
-             */
+            Intent intent = new Intent(this, AppSettings.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         } else if (item.getItemId() == R.id.mainMenu_share) {
             Toast.makeText(this, "Share App Link pressed", Toast.LENGTH_SHORT).show();
             /*
 
-            Todo Stuff for search video files
+            Todo Stuff for App Link Share
 
              */
         } else if (item.getItemId() == R.id.mainMenu_rateUs) {
-            Toast.makeText(this, "Rate Us pressed", Toast.LENGTH_SHORT).show();
-            /*
-
-            Todo Stuff for search video files
-
-             */
+            Intent intent = new Intent(this, ReviewActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         } else if (item.getItemId() == R.id.mainMenu_about) {
             Toast.makeText(this, "About pressed", Toast.LENGTH_SHORT).show();
             /*
 
-            Todo Stuff for search video files
+            Todo Stuff for About Us
 
              */
         } else if (item.getItemId() == R.id.mainMenu_licences) {
-            Toast.makeText(this, "Licences pressed", Toast.LENGTH_SHORT).show();
-            /*
-
-            Todo Stuff for search video files
-
-             */
+            showLicenses();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -120,6 +114,20 @@ public class MainActivity extends AppCompatActivity {
         return list;
     }
 
+    private void showLicenses() {
+        new AlertDialog.Builder(this)
+                .setIcon(R.drawable.exit_to_app)
+                .setTitle("View Licenses?")
+                .setMessage("You want to view Licenses?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    OssLicensesMenuActivity.setActivityTitle("Licenses");
+                    // Handle the case where the user grants the permission
+                    Intent intent = new Intent(this, OssLicensesMenuActivity.class);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
 
 
 }

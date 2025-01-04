@@ -7,7 +7,6 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" /> <!-- Devices running Android 13 (API level 33) or higher -->
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-
     <!--
  To handle the reselection within the app on devices running Android 14
          or higher if your app targets Android 14 (API level 34) or higher.
@@ -28,6 +27,12 @@
         android:supportsRtl="true"
         android:theme="@style/VGPlayer"
         tools:targetApi="35">
+        <activity
+            android:name=".extras.AppSettings"
+            android:exported="false" />
+
+        <activity android:name=".extras.ReviewActivity"
+            android:exported="false"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -78,6 +83,7 @@
         <activity
             android:name=".videos.VideoFilesActivity"
             android:exported="false" />
+
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

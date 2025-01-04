@@ -8,8 +8,6 @@ import static com.mytechnology.video.vgplayer.videos.VideoPlayActivity.MY_SHARED
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.graphics.drawable.Icon;
 import android.media.MediaMetadataRetriever;
 import android.text.format.Formatter;
 import android.view.LayoutInflater;

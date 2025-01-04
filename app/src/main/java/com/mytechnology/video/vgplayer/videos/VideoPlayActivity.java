@@ -24,6 +24,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -116,12 +117,14 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     private Window window;
     boolean value;
     ConstraintLayout controllerMainLayout;
+    LinearLayout swapBackward, swapForward;
+    TextView txtFastForward10, txtBackward10;
 
     // volume and brightness Variable
-    private ConstraintLayout volumeLayout, brightnessLayout;
+    private ConstraintLayout volumeLayout, brightnessLayout, fastForwardBackward;
     private ImageView imageViewVolume, imageViewBrightness;
-    private ProgressBar progressBarVolume, progressBarBrightness;
-    private TextView txtVolumeText, txBrightnessText;
+    private ProgressBar progressBarVolume, progressBarBrightness, timeBar;
+    private TextView txtVolumeText, txBrightnessText, txtFastForwardBackward;
     private ImageView playPauseDoubleTap;
 
     public VideoPlayActivity() {
@@ -156,6 +159,13 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         controllerMainLayout = playerView.findViewById(R.id.layout_player_controller);
         volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
         brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
+        fastForwardBackward = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_fast_forward_backward);
+        txtFastForwardBackward = layoutSwapGesture.findViewById(R.id.txtfast_forward_backward_position);
+        timeBar = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_timebar);
+        swapForward = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_fast_forward_10);
+        swapBackward = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_backward_10);
+        txtFastForward10 = layoutSwapGesture.findViewById(R.id.txtIncrement10);
+        txtBackward10 = layoutSwapGesture.findViewById(R.id.txtDecrement10);
         imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
         imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);
         progressBarVolume = volumeLayout.findViewById(R.id.progressBarVolume);
@@ -204,7 +214,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         if (controllerMainLayout.getVisibility() == View.VISIBLE) {
-                            playerView.showController();
+                            playerView.hideController();
+                            lockScreen.setVisibility(View.VISIBLE);
+                        } else if (!playerView.isControllerFullyVisible() && isScreenLocked) {
                             lockScreen.setVisibility(View.VISIBLE);
                         }
                         break;
@@ -212,6 +224,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                         player.setPlaybackSpeed(PLAY_SPEED_NORMAL);
                         volumeLayout.setVisibility(View.GONE);
                         brightnessLayout.setVisibility(View.GONE);
+                        fastForwardBackward.setVisibility(View.GONE);
+                        swapForward.setVisibility(View.GONE);
+                        swapBackward.setVisibility(View.GONE);
                         if (player != null && player.isPlaying()) {
                             playPauseDoubleTap.setVisibility(View.GONE);
                         }
@@ -233,10 +248,15 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                             if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
                                 // Right swipe - Fast forward
                                 forWard_10Sec();
+                                fastForwardBackward.setVisibility(View.VISIBLE);
+                                txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
+                                timeBar.setProgress((int) player.getCurrentPosition());
                             } else if (((deltaX) < SWIPE_THRESHOLD) && (distanceX > 0)) {
                                 // Left swipe - Rewind
-                                playerView.showController();
                                 backWard_10Sec();
+                                fastForwardBackward.setVisibility(View.VISIBLE);
+                                txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
+                                timeBar.setProgress((int) player.getCurrentPosition());
                             }
                         } else {
                             // Vertical swipe for volume/brightness control
@@ -311,6 +331,10 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             public void onDoubleTouch(MotionEvent e) {
                 super.onDoubleTouch(e);
                 assert e != null;
+                int doubleTapCount = e.getPointerCount();
+
+                Log.d(TAG, "onDoubleTouch: " + doubleTapCount);
+                int increment;
                 boolean left = e.getX() < (float) mainLayout.getWidth() / 3;
                 boolean right = e.getX() > ((float) mainLayout.getWidth() / 3) * 2;
                 boolean center = e.getX() > (float) mainLayout.getWidth() / 3 && e.getX() < ((float) mainLayout.getWidth() / 3) * 2;
@@ -318,9 +342,27 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                     if (left) {
                         // Left half - For rewind on Double Tap
                         backWard_10Sec();
+                        swapBackward.setVisibility(View.VISIBLE);
+                        lockScreen.setVisibility(View.GONE);
+                        if (player.getCurrentPosition() < (long)10000){
+                            increment = 0;
+                        } else {
+                            doubleTapCount ++;
+                            increment = doubleTapCount * 10;
+                        }
+                        txtBackward10.setText(String.format(Locale.getDefault(),"-%d", increment));
                     } else if (right) {
                         // Right half - For Fast Forward on Double Tap
                         forWard_10Sec();
+                        swapForward.setVisibility(View.VISIBLE);
+                        lockScreen.setVisibility(View.GONE);
+                        if (player.getDuration() - player.getCurrentPosition() < (long)10000){
+                            increment = 0;
+                        } else {
+                            doubleTapCount ++;
+                            increment = doubleTapCount * 10;
+                        }
+                        txtFastForward10.setText(String.format(Locale.getDefault(),"+%d", increment));
                     } else if (center) {
                         if (player.isPlaying()) {
                             pauseVideo();
@@ -361,10 +403,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                         lockScreen.setVisibility(View.VISIBLE);
                         controllerMainLayout.setVisibility(View.VISIBLE);
                     }
-                } else {
-                    lockScreen.setVisibility(View.VISIBLE);
-                    playerView.hideController();
-                    controllerMainLayout.setVisibility(View.GONE);
                 }
             }
         });
@@ -404,14 +442,14 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             PopupMenu popupMenu = new PopupMenu(VideoPlayActivity.this, extraMenu);
             popupMenu.getMenuInflater().inflate(R.menu.video_play_menu_list, popupMenu.getMenu());
             popupMenu.setOnMenuItemClickListener(item -> {
-                if (item.getItemId() == R.id.video_play_list_share){
-                    if (player.isPlaying()){
+                if (item.getItemId() == R.id.video_play_list_share) {
+                    if (player.isPlaying()) {
                         pauseVideo();
                     }
                     ShareHelper shareHelper = new ShareHelper(VideoPlayActivity.this);
                     shareHelper.shareVideo(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath());
                 } else if (item.getItemId() == R.id.video_play_list_properties) {
-                    if (player.isPlaying()){
+                    if (player.isPlaying()) {
                         pauseVideo();
                     }
                     AlertDialog dialog = new AlertDialog.Builder(VideoPlayActivity.this).create();
@@ -437,7 +475,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                             + "Resolution:  " + width + " X " + height + "\n\n"
                             + "Size:  " + Formatter.formatFileSize(VideoPlayActivity.this, mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getSize()) + "\n\n"
                             + "Duration:  " + ConvertSecondToHHMMSSString(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getDuration()) + "\n\n"
-                            + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" +formattedDate  + "\n\n");
+                            + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" + formattedDate + "\n\n");
                     dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, which) -> {
                         playVideo();
                         dialog1.dismiss();
@@ -464,6 +502,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                     player.seekTo(0);
                                     playVideo();
                                 })
+                                .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
                                 .show();
                     }
                 } else if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
@@ -544,21 +583,19 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             long position1 = preferences.getLong(mVideoModelArrayList.get(currentPosition).getPath(), 0);
             if (position1 != player.getDuration()) {
                 player.seekTo(currentPosition, position1);
+                Snackbar.make(mainLayout, "Play from Start!", 3000)
+                        .setAction("Yes", v -> {
+                            player.seekTo(0);
+                            playVideo();
+                        })
+                        .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
+                        .show();
             } else {
                 player.seekTo(currentPosition, 0);
             }
         } else {
             player.seekTo(currentPosition, 0);
         }
-
-        if (preferences.contains(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath())) {
-            Snackbar.make(mainLayout, "Play from Start!", 4000)
-                    .setAction("Yes", v -> {
-                        player.seekTo(0);
-                        playVideo();
-                    }).show();
-        }
-
         player.setPlayWhenReady(true);
         trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
 

@@ -7,14 +7,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -68,7 +65,7 @@ public class PermissionActivity extends AppCompatActivity {
     }
 
     private void getPermission() {
-        if (ContextCompat.checkSelfPermission(this, Arrays.toString(PermissionActivity.PERMISSIONS_STORAGE))!= PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Arrays.toString(PermissionActivity.PERMISSIONS_STORAGE)) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, PermissionActivity.PERMISSIONS_STORAGE, 1);
         } else {
             startActivity(intent);
