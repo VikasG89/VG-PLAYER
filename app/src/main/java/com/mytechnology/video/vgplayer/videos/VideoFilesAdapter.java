@@ -42,15 +42,20 @@ import java.util.Locale;
 public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.VideoFilesViewHolder> {
     Context context;
     ArrayList<VideoModel> videoModels;
-    final ItemClickListener clickListener;
+    private final ItemClickListener clickListener;
+    private final DeleteFileCallback callback;
+    private final ReNameCallback reNameCallback;
     ArrayList<VideoModel> videoModelFull;
 
-    public VideoFilesAdapter(final Context context, final ArrayList<VideoModel> videoModels, ItemClickListener clickListener) {
+    public VideoFilesAdapter(final Context context, final ArrayList<VideoModel> videoModels, ItemClickListener clickListener, DeleteFileCallback callback, ReNameCallback reNameCallback) {
         this.context = context;
         this.videoModels = videoModels;
         this.clickListener = clickListener;
         this.videoModelFull = new ArrayList<>(videoModels);
+        this.callback = callback;
+        this.reNameCallback = reNameCallback;
     }
+
 
     @NonNull
     public VideoFilesViewHolder onCreateViewHolder(final ViewGroup viewGroup, final int n) {
@@ -108,9 +113,13 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
                         + "Resolution:  " + width + " X " + height + "\n\n"
                         + "Size:  " + Formatter.formatFileSize(context, videoModels.get(holder.getBindingAdapterPosition()).getSize()) + "\n\n"
                         + "Duration:  " + ConvertSecondToHHMMSSString(videoModels.get(holder.getBindingAdapterPosition()).getDuration()) + "\n\n"
-                        + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" +formattedDate + "\n\n");
+                        + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" + formattedDate + "\n\n");
                 dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, which) -> dialog1.dismiss());
                 dialog.show();
+            } else if (item.getItemId() == R.id.menuItem_delete) {
+                callback.deleteFile(holder.getBindingAdapterPosition());
+            } else if (item.getItemId() == R.id.menuItem_rename) {
+               reNameCallback.reNameFile(holder.getBindingAdapterPosition());
             }
             return true;
         });
@@ -134,6 +143,13 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
 
     public interface ItemClickListener {
         void onItemClick(final int adapterPotion);
+    }
+
+    public interface DeleteFileCallback {
+        void deleteFile(int adaptorPosition);
+    }
+    public interface ReNameCallback{
+        void reNameFile(int adaptorPosition);
     }
 
     public static class VideoFilesViewHolder extends RecyclerView.ViewHolder {

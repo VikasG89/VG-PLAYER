@@ -14,15 +14,15 @@
         android:icon="@drawable/share_icon"
         android:iconTint="@color/night_black"/>
 
-    <!--<item android:id="@+id/menuItem_delete"
-        android:title="@string/delete"
-        app:showAsAction="ifRoom"
-        android:icon="@drawable/delete_forever_icon" />
-
     <item android:id="@+id/menuItem_rename"
         android:title="@string/rename"
         app:showAsAction="ifRoom"
-        android:icon="@drawable/rename_icon" />-->
+        android:icon="@drawable/rename_icon" />
+
+    <item android:id="@+id/menuItem_delete"
+        android:title="@string/delete"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/delete_forever_icon" />
 
     <item android:id="@+id/menuItem_details"
         android:title="@string/properties"

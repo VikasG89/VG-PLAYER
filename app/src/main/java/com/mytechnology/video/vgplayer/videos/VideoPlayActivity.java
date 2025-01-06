@@ -161,7 +161,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
         fastForwardBackward = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_fast_forward_backward);
         txtFastForwardBackward = layoutSwapGesture.findViewById(R.id.txtfast_forward_backward_position);
-        timeBar = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_timebar);
+        timeBar = layoutSwapGesture.findViewById(R.id.timeBar);
         swapForward = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_fast_forward_10);
         swapBackward = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_backward_10);
         txtFastForward10 = layoutSwapGesture.findViewById(R.id.txtIncrement10);
@@ -244,6 +244,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 if (!isScreenLocked) {
                     try {
                         if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                            timeBar.setMin(0);
+                            timeBar.setMax((int) player.getDuration());
+                            timeBar.setProgress((int) player.getCurrentPosition());
                             // Horizontal swipe for playback control
                             if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
                                 // Right swipe - Fast forward

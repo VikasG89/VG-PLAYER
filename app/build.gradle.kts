@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.android.gms.oss-licenses-plugin")
 }
 
 android {

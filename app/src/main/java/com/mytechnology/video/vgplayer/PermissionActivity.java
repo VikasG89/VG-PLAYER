@@ -1,12 +1,21 @@
 package com.mytechnology.video.vgplayer;
 
+import static android.content.ContentValues.TAG;
+
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -32,6 +41,7 @@ public class PermissionActivity extends AppCompatActivity {
         insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         insetsController.hide(WindowInsetsCompat.Type.systemBars());
 
+
         if (Build.VERSION.SDK_INT >= 33) {
             PERMISSIONS_STORAGE = new String[]{"android.permission.READ_MEDIA_VIDEO"};
         } else {
@@ -50,13 +60,16 @@ public class PermissionActivity extends AppCompatActivity {
 
     }
 
-    public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] array, @NonNull final int[] array2) {
-        super.onRequestPermissionsResult(requestCode, array, array2);
+    public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1) {
-            if (array2.length > 0 && array2[0] == PackageManager.PERMISSION_GRANTED) {
-                permission = PackageManager.PERMISSION_GRANTED;
-                startActivity(intent);
-                finish();
+            if (grantResults.length > 0) {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    permission = PackageManager.PERMISSION_GRANTED;
+                    startActivity(intent);
+                    finish();
+                }
+
             }
         } else {
             Toast.makeText(this, "Permissions Denied!!\nAll Permissions Are Required", Toast.LENGTH_LONG).show();
@@ -73,4 +86,5 @@ public class PermissionActivity extends AppCompatActivity {
         }
 
     }
+
 }

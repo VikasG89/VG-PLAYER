@@ -38,4 +38,9 @@
     <string name="write_your_review1" translatable="false">\t\t\tPlease feel free to give us your five star rating and write a review on our App. Our Developer will happy to here you about your experience.
                                        Your Review Help us to improve our services. \n \t\tTHANKS FOR YOUR HUMBLE review! </string>
     <string name="give_us_star_rating"><u>Give us Five Star Rating!</u></string>
+
+    <string name="dark_theme">Dark</string>
+    <string name="default_theme">Default</string>
+    <string name="light_theme">Light</string>
+    <string name="choose_theme">Choose Theme -</string>
 </resources>

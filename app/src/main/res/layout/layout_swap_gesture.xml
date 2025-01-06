@@ -163,14 +163,14 @@
                 android:text="@string/_00_00"
                 android:textColor="@color/white"
                 android:textSize="@dimen/sp_30"
-                app:layout_constraintBottom_toTopOf="@id/layout_swap_gesture_timebar"
+                app:layout_constraintBottom_toTopOf="@id/timeBar"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <ProgressBar
-                android:id="@+id/layout_swap_gesture_timebar"
+                android:id="@+id/timeBar"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

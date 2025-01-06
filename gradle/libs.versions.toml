@@ -9,6 +9,7 @@ activity = "1.9.3"
 constraintlayout = "2.2.0"
 glide = "4.16.0"
 media3Exoplayer = "1.5.1"
+ossLicensesPlugin = "0.10.6"
 playServicesOssLicenses = "17.1.0"
 
 review = "2.0.2"
@@ -28,6 +29,7 @@ media3-exoplayer-dash = { module = "androidx.media3:media3-exoplayer-dash", vers
 media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3Exoplayer" }
 
 review = { module = "com.google.android.play:review", version.ref = "review" }
+oss-licenses-plugin = { module = "com.google.android.gms:oss-licenses-plugin", version.ref = "ossLicensesPlugin" }
 play-services-oss-licenses = { module = "com.google.android.gms:play-services-oss-licenses", version.ref = "playServicesOssLicenses" }
 
 [plugins]
