@@ -13,6 +13,7 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -182,9 +183,11 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         playbackAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
-        focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(playbackAttributes).setAcceptsDelayedFocusGain(true)
-                .setOnAudioFocusChangeListener(this, Handler.createAsync(Looper.getMainLooper())).build();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .setAudioAttributes(playbackAttributes).setAcceptsDelayedFocusGain(true)
+                    .setOnAudioFocusChangeListener(this, Handler.createAsync(Looper.getMainLooper())).build();
+        }
 
         // Getting Intent Data
         videoFilesAdapterPosition = getIntent().getIntExtra("position", 0);

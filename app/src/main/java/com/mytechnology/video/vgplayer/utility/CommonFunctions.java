@@ -4,22 +4,13 @@ import static android.content.Context.MODE_PRIVATE;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
-import android.text.format.Formatter;
-
-import androidx.appcompat.app.AlertDialog;
-import androidx.media3.exoplayer.ExoPlayer;
 
 import com.mytechnology.video.vgplayer.videos.VideoModel;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Locale;
 
 public class CommonFunctions {

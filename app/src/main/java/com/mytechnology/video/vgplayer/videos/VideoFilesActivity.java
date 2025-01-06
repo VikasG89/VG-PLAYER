@@ -4,7 +4,6 @@ import static android.content.ContentValues.TAG;
 import static com.mytechnology.video.vgplayer.utility.CommonFunctions.getVideosWithSort;
 import static com.mytechnology.video.vgplayer.videos.VideoPlayActivity.MY_SHARED_PREFS_VIDEO;
 
-import android.app.ComponentCaller;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -104,12 +103,20 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 222333) {
+            startActivity(getIntent());
+        }
+    }
+
+    /*@Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data, @NonNull ComponentCaller caller) {
         super.onActivityResult(requestCode, resultCode, data, caller);
         if (requestCode == 222333) {
             startActivity(getIntent());
         }
-    }
+    }*/
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -131,11 +138,8 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
 
                 @Override
                 public boolean onQueryTextChange(String newText) {
-                    if (newText != null) {
-                        adapter.filter(newText);
-                        return true;
-                    }
-                    return false;
+                    adapter.filter(newText);
+                    return true;
                 }
             });
             searchView.setOnCloseListener(() -> {
@@ -231,9 +235,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     Toast.makeText(this, "Error Renaming File! Please try again!!", Toast.LENGTH_SHORT).show();
                 }
             });
-            builder.setNegativeButton("No", (dialog, id) -> {
-                dialog.dismiss();
-            });
+            builder.setNegativeButton("No", (dialog, id) -> dialog.dismiss());
             builder.show();
         }
     }
@@ -280,9 +282,6 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     } else {
                         Toast.makeText(VideoFilesActivity.this, "Storage Permissions Denied", Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    //Below android 11
-
                 }
             });
 }

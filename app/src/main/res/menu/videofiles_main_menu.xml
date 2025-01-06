@@ -7,8 +7,15 @@
         android:icon="@drawable/search_icon"
         android:iconTint="@color/night_black"
         android:title="@string/search"
+        app:showAsAction="always" />
+
+    <!--<item
+        android:id="@+id/mainMenu_search"
+        android:icon="@drawable/search_icon"
+        android:iconTint="@color/night_black"
+        android:title="@string/search"
         app:showAsAction="always"
-        app:actionViewClass="androidx.appcompat.widget.SearchView"/>
+        app:actionViewClass="androidx.appcompat.widget.SearchView"/>-->
 
     <item
         android:id="@+id/mainMenu_sortBy"
