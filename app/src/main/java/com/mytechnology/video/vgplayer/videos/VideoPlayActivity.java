@@ -8,15 +8,10 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.Settings;
 import android.text.format.Formatter;
 import android.util.Log;
@@ -45,6 +40,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
@@ -74,6 +70,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 @UnstableApi
@@ -98,8 +96,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     boolean isScreenLocked = false;
 
     // Audio Focus Variables
-    AudioAttributes playbackAttributes;
-    AudioFocusRequest focusRequest;
+    //AudioAttributes playbackAttributes;
+    androidx.media3.common.AudioAttributes playbackAttributes;
+    //AudioFocusRequest focusRequest;
     final Object focusLock = new Object();
     boolean playbackDelayed = false;
     boolean playbackNowAuthorized = false;
@@ -127,6 +126,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     private ProgressBar progressBarVolume, progressBarBrightness, timeBar;
     private TextView txtVolumeText, txBrightnessText, txtFastForwardBackward;
     private ImageView playPauseDoubleTap;
+    int doubleTapCountLeft = 0;
+    int doubleTapCountRight = 0;
 
     public VideoPlayActivity() {
         //this.mediaSourceList = new ArrayList<>();
@@ -179,15 +180,24 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
         editor = preferences.edit();
 
+
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        playbackAttributes = new AudioAttributes.Builder()
+        /*playbackAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                     .setAudioAttributes(playbackAttributes).setAcceptsDelayedFocusGain(true)
                     .setOnAudioFocusChangeListener(this, Handler.createAsync(Looper.getMainLooper())).build();
-        }
+        }*/
+
+        playbackAttributes = new AudioAttributes.Builder().build();
+
+        /*focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(playbackAttributes)
+                .setAcceptsDelayedFocusGain(true)
+                .setOnAudioFocusChangeListener(this)
+                .build();*/
 
         // Getting Intent Data
         videoFilesAdapterPosition = getIntent().getIntExtra("position", 0);
@@ -196,6 +206,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
         // Initialize ExoPlayer
         initializeExoPlayer();
+
 
         // Setting Auto Fullscreen enabled OR disabled
         playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
@@ -249,7 +260,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                         if (Math.abs(deltaX) > Math.abs(deltaY)) {
                             timeBar.setMin(0);
                             timeBar.setMax((int) player.getDuration());
-                            timeBar.setProgress((int) player.getCurrentPosition());
                             // Horizontal swipe for playback control
                             if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
                                 // Right swipe - Fast forward
@@ -336,37 +346,33 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             @Override
             public void onDoubleTouch(MotionEvent e) {
                 super.onDoubleTouch(e);
-                assert e != null;
-                int doubleTapCount = e.getPointerCount();
-
-                Log.d(TAG, "onDoubleTouch: " + doubleTapCount);
-                int increment;
                 boolean left = e.getX() < (float) mainLayout.getWidth() / 3;
                 boolean right = e.getX() > ((float) mainLayout.getWidth() / 3) * 2;
                 boolean center = e.getX() > (float) mainLayout.getWidth() / 3 && e.getX() < ((float) mainLayout.getWidth() / 3) * 2;
                 if (!isScreenLocked) {
                     if (left) {
                         // Left half - For rewind on Double Tap
+                        doubleTapCountRight = 0;
+                        doubleTapCountLeft ++;
+                        Log.d(TAG, "onDoubleTouch: " + doubleTapCountLeft);
                         backWard_10Sec();
                         swapBackward.setVisibility(View.VISIBLE);
                         lockScreen.setVisibility(View.GONE);
-                        if (player.getCurrentPosition() < (long)10000){
-                            increment = 0;
-                        } else {
-                            doubleTapCount ++;
-                            increment = doubleTapCount * 10;
+                        int increment = 0;
+                        if (player.getCurrentPosition() != timeBar.getMin()){
+                            increment = doubleTapCountLeft * 10;
                         }
                         txtBackward10.setText(String.format(Locale.getDefault(),"-%d", increment));
                     } else if (right) {
                         // Right half - For Fast Forward on Double Tap
+                        doubleTapCountLeft = 0;
+                        doubleTapCountRight++;
                         forWard_10Sec();
                         swapForward.setVisibility(View.VISIBLE);
                         lockScreen.setVisibility(View.GONE);
-                        if (player.getDuration() - player.getCurrentPosition() < (long)10000){
-                            increment = 0;
-                        } else {
-                            doubleTapCount ++;
-                            increment = doubleTapCount * 10;
+                        int increment = 0;
+                        if (player.getCurrentPosition() != timeBar.getMax()){
+                            increment = doubleTapCountRight * 10;
                         }
                         txtFastForward10.setText(String.format(Locale.getDefault(),"+%d", increment));
                     } else if (center) {
@@ -398,6 +404,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             @Override
             public void onSingleTouch() {
                 super.onSingleTouch();
+                doubleTapCountLeft = 0;
+                doubleTapCountRight = 0;
                 isControllerVisible = !isControllerVisible;
                 if (!isScreenLocked) {
                     if (isControllerVisible) {
@@ -548,6 +556,18 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
     }
 
+    private void resetDoubleTap(){
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                doubleTapCountLeft = 0;
+                doubleTapCountRight = 0;
+            }
+        };
+        Timer timer = new Timer();
+        timer.schedule(timerTask, 2000);
+    }
+
     @OptIn(markerClass = UnstableApi.class)
     private void hideControllerSwipe() {
         controllerMainLayout.setVisibility(View.GONE);
@@ -569,6 +589,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 .setMediaSourceFactory(new DefaultMediaSourceFactory(this, extractorsFactory))
                 .setMediaSourceFactory(mediaSourceFactory)
                 .setHandleAudioBecomingNoisy(true)
+                .setAudioAttributes(playbackAttributes, true)
                 .build();
 
         for (int i = 0; i < mVideoModelArrayList.size(); ++i) {
@@ -605,7 +626,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         player.setPlayWhenReady(true);
         trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
 
-        int res = audioManager.requestAudioFocus(focusRequest);
+        /*int res = audioManager.requestAudioFocus(focusRequest);
         synchronized (focusLock) {
             if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
                 playbackNowAuthorized = false;
@@ -616,7 +637,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 playbackDelayed = true;
                 playbackNowAuthorized = false;
             }
-        }
+        }*/
         savePreference(player.getCurrentPosition());
     }
 

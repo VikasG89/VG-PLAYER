@@ -22,6 +22,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.oss.licenses.OssLicensesActivity;
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity;
 import com.mytechnology.video.vgplayer.databinding.ActivityMainBinding;
 import com.mytechnology.video.vgplayer.extras.AppSettings;
@@ -29,6 +30,7 @@ import com.mytechnology.video.vgplayer.extras.ReviewActivity;
 import com.mytechnology.video.vgplayer.videos.VideoFolderAdapter;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 

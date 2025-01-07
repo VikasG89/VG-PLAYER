@@ -15,7 +15,6 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -54,7 +53,6 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     public static ArrayList<VideoModel> videoModels;
     VideoFilesAdapter adapter;
     ActivityVideoFilesBinding binding;
-    SearchView searchView;
     String myVFolder;
     RecyclerView recyclerView;
     private final Object lock = new Object();
@@ -77,16 +75,14 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        searchView = binding.searchViewVideoFiles;
         recyclerView = binding.videoFilesRV;
         myVFolder = getIntent().getStringExtra("Folder Name");
         ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(myVFolder);
 
         videoModels = getVideosWithSort(getApplicationContext(), myVFolder);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        final VideoFilesAdapter videoFilesAdapter = new VideoFilesAdapter(this, VideoFilesActivity.videoModels, this, this, this);
-        adapter = videoFilesAdapter;
-        recyclerView.setAdapter(videoFilesAdapter);
+        adapter = new VideoFilesAdapter(this, VideoFilesActivity.videoModels, this, this, this);
+        recyclerView.setAdapter(adapter);
         OnBackPressedDispatcher dispatcher = getOnBackPressedDispatcher();
         dispatcher.addCallback(new OnBackPressedCallback(true) {
             @Override
@@ -110,14 +106,6 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         }
     }
 
-    /*@Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data, @NonNull ComponentCaller caller) {
-        super.onActivityResult(requestCode, resultCode, data, caller);
-        if (requestCode == 222333) {
-            startActivity(getIntent());
-        }
-    }*/
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.videofiles_main_menu, menu);
@@ -128,8 +116,9 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         SharedPreferences preferences = getSharedPreferences("com.mytechnology.video.vgplayer.sort_Video", MODE_PRIVATE);
         if (item.getItemId() == R.id.mainMenu_search) {
-            searchView.setVisibility(View.VISIBLE);
-            item.setVisible(false);
+            SearchView searchView = (SearchView) item.getActionView();
+            assert searchView != null;
+            searchView.setQueryHint("Type to Search video");
             searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                 @Override
                 public boolean onQueryTextSubmit(String query) {
@@ -141,11 +130,6 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     adapter.filter(newText);
                     return true;
                 }
-            });
-            searchView.setOnCloseListener(() -> {
-                item.setVisible(true);
-                searchView.setVisibility(View.GONE);
-                return true;
             });
         } else if (item.getItemId() == R.id.menu_sort_by_name) {
             preferences.edit().putString("AUDIO_SORT", "byName").apply();
