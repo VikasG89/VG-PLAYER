@@ -20,7 +20,6 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,6 +48,7 @@ import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RenderersFactory;
+import androidx.media3.exoplayer.SeekParameters;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.extractor.ExtractorsFactory;
@@ -109,7 +109,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     ConstraintLayout layoutSwapGesture;
     private AudioManager audioManager;
     private static final int SWIPE_THRESHOLD = 100;
-    private int displayBrightness, mediaVolume, maxVolume;
+    private int displayBrightness, maxVolume;
     private boolean isControllerVisible = false;
     private static final float PLAY_SPEED_2X = 2f;
     private static final float PLAY_SPEED_NORMAL = 1f;
@@ -117,14 +117,13 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     private Window window;
     boolean value;
     ConstraintLayout controllerMainLayout;
-    LinearLayout swapBackward, swapForward;
-    TextView txtFastForward10, txtBackward10;
+
 
     // volume and brightness Variable
-    private ConstraintLayout volumeLayout, brightnessLayout, fastForwardBackward;
+    private ConstraintLayout volumeLayout, brightnessLayout;
     private ImageView imageViewVolume, imageViewBrightness;
     private ProgressBar progressBarVolume, progressBarBrightness, timeBar;
-    private TextView txtVolumeText, txBrightnessText, txtFastForwardBackward;
+    private TextView txtVolumeText, txBrightnessText, txtFastForwardBackward, txtSpeedDoubleOnLongPress;
     private ImageView playPauseDoubleTap;
     int doubleTapCountLeft = 0;
     int doubleTapCountRight = 0;
@@ -161,13 +160,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         controllerMainLayout = playerView.findViewById(R.id.layout_player_controller);
         volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
         brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
-        fastForwardBackward = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_fast_forward_backward);
         txtFastForwardBackward = layoutSwapGesture.findViewById(R.id.txtfast_forward_backward_position);
         timeBar = layoutSwapGesture.findViewById(R.id.timeBar);
-        swapForward = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_fast_forward_10);
-        swapBackward = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_backward_10);
-        txtFastForward10 = layoutSwapGesture.findViewById(R.id.txtIncrement10);
-        txtBackward10 = layoutSwapGesture.findViewById(R.id.txtDecrement10);
+        txtSpeedDoubleOnLongPress = layoutSwapGesture.findViewById(R.id.txt_speed_double_onLong_press);
         imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
         imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);
         progressBarVolume = volumeLayout.findViewById(R.id.progressBarVolume);
@@ -238,9 +233,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                         player.setPlaybackSpeed(PLAY_SPEED_NORMAL);
                         volumeLayout.setVisibility(View.GONE);
                         brightnessLayout.setVisibility(View.GONE);
-                        fastForwardBackward.setVisibility(View.GONE);
-                        swapForward.setVisibility(View.GONE);
-                        swapBackward.setVisibility(View.GONE);
+                        txtFastForwardBackward.setVisibility(View.GONE);
+                        timeBar.setVisibility(View.GONE);
+                        txtSpeedDoubleOnLongPress.setVisibility(View.GONE);
                         if (player != null && player.isPlaying()) {
                             playPauseDoubleTap.setVisibility(View.GONE);
                         }
@@ -264,13 +259,15 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                             if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
                                 // Right swipe - Fast forward
                                 forWard_10Sec();
-                                fastForwardBackward.setVisibility(View.VISIBLE);
+                                txtFastForwardBackward.setVisibility(View.VISIBLE);
+                                timeBar.setVisibility(View.VISIBLE);
                                 txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
                                 timeBar.setProgress((int) player.getCurrentPosition());
                             } else if (((deltaX) < SWIPE_THRESHOLD) && (distanceX > 0)) {
                                 // Left swipe - Rewind
                                 backWard_10Sec();
-                                fastForwardBackward.setVisibility(View.VISIBLE);
+                                txtFastForwardBackward.setVisibility(View.VISIBLE);
+                                timeBar.setVisibility(View.VISIBLE);
                                 txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
                                 timeBar.setProgress((int) player.getCurrentPosition());
                             }
@@ -306,19 +303,20 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                     WindowManager.LayoutParams layoutParams = window.getAttributes();
                                     layoutParams.screenBrightness = displayBrightness / (float) 255;
                                     window.setAttributes(layoutParams);
-
                                     brightnessLayout.setVisibility(View.VISIBLE);
                                     progressBarBrightness.setProgress((int) brtPercentage);
                                     txBrightnessText.setText(String.format(Locale.getDefault(), "%d%%", (int) brtPercentage));
                                     hideControllerSwipe();
                                 } else if (e1.getX() > (float) mainLayout.getWidth() / 2) {
                                     // Right half - Volume
+                                    int scrollRange = mainLayout.getHeight() * 2;
+                                    double deltaYScaled = (deltaY / (double) scrollRange) * 100; // Normalize deltaY to a 0-100 range
                                     maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-                                    mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                                    double calVol = mediaVolume + (-deltaY / ((double) mainLayout.getHeight() /*/ 2*/)) * maxVolume;
+                                    int mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                                    double calVol = mediaVolume + (-deltaYScaled / 100) * maxVolume;
                                     calVol = Math.max(0, Math.min(maxVolume, calVol));
                                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) calVol, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-                                    double volPercentage = (calVol / (double) (maxVolume)) * (double) 100;
+                                    double volPercentage = (calVol / (double) maxVolume) * 100;
                                     volumeLayout.setVisibility(View.VISIBLE);
                                     if (volPercentage < 1) {
                                         imageViewVolume.setImageResource(R.drawable.volume_off);
@@ -346,6 +344,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             @Override
             public void onDoubleTouch(MotionEvent e) {
                 super.onDoubleTouch(e);
+                setFullScreen(true);
                 boolean left = e.getX() < (float) mainLayout.getWidth() / 3;
                 boolean right = e.getX() > ((float) mainLayout.getWidth() / 3) * 2;
                 boolean center = e.getX() > (float) mainLayout.getWidth() / 3 && e.getX() < ((float) mainLayout.getWidth() / 3) * 2;
@@ -353,28 +352,30 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                     if (left) {
                         // Left half - For rewind on Double Tap
                         doubleTapCountRight = 0;
-                        doubleTapCountLeft ++;
+                        doubleTapCountLeft++;
                         Log.d(TAG, "onDoubleTouch: " + doubleTapCountLeft);
                         backWard_10Sec();
-                        swapBackward.setVisibility(View.VISIBLE);
                         lockScreen.setVisibility(View.GONE);
                         int increment = 0;
-                        if (player.getCurrentPosition() != timeBar.getMin()){
+                        if (player.getCurrentPosition() != timeBar.getMin()) {
                             increment = doubleTapCountLeft * 10;
                         }
-                        txtBackward10.setText(String.format(Locale.getDefault(),"-%d", increment));
+                        txtFastForwardBackward.setVisibility(View.VISIBLE);
+                        txtFastForwardBackward.setText(String.format(Locale.getDefault(), "-%d", increment));
+                        timeBar.setProgress(increment);
                     } else if (right) {
                         // Right half - For Fast Forward on Double Tap
                         doubleTapCountLeft = 0;
                         doubleTapCountRight++;
                         forWard_10Sec();
-                        swapForward.setVisibility(View.VISIBLE);
                         lockScreen.setVisibility(View.GONE);
                         int increment = 0;
-                        if (player.getCurrentPosition() != timeBar.getMax()){
+                        if (player.getCurrentPosition() != timeBar.getMax()) {
                             increment = doubleTapCountRight * 10;
                         }
-                        txtFastForward10.setText(String.format(Locale.getDefault(),"+%d", increment));
+                        txtFastForwardBackward.setVisibility(View.VISIBLE);
+                        txtFastForwardBackward.setText(String.format(Locale.getDefault(), "+%d", increment));
+                        timeBar.setProgress(increment);
                     } else if (center) {
                         if (player.isPlaying()) {
                             pauseVideo();
@@ -396,6 +397,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 if (e.getAction() == MotionEvent.ACTION_DOWN) {
                     if (!isScreenLocked) {
                         player.setPlaybackSpeed(PLAY_SPEED_2X);
+                        txtSpeedDoubleOnLongPress.setVisibility(View.VISIBLE);
                     }
                 }
             }
@@ -556,7 +558,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
     }
 
-    private void resetDoubleTap(){
+    private void resetDoubleTap() {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
@@ -589,6 +591,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 .setMediaSourceFactory(new DefaultMediaSourceFactory(this, extractorsFactory))
                 .setMediaSourceFactory(mediaSourceFactory)
                 .setHandleAudioBecomingNoisy(true)
+                .setSeekParameters(new SeekParameters(10000, 10000))
                 .setAudioAttributes(playbackAttributes, true)
                 .build();
 

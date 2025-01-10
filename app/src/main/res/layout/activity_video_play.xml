@@ -17,7 +17,6 @@
         app:bar_gravity="center"
         app:bar_height="@dimen/dp_5"
         app:controller_layout_id="@layout/player_controller"
-        app:hide_on_touch="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"

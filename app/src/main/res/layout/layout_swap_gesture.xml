@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/layout_swap_gesture"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -142,14 +143,12 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.39"
-            app:srcCompat="@drawable/play" />
+            app:srcCompat="@drawable/pause" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/layout_swap_gesture_fast_forward_backward"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="invisible"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">
@@ -163,6 +162,7 @@
                 android:text="@string/_00_00"
                 android:textColor="@color/white"
                 android:textSize="@dimen/sp_30"
+                android:visibility="invisible"
                 app:layout_constraintBottom_toTopOf="@id/timeBar"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
@@ -178,6 +178,7 @@
                 android:layout_marginTop="@dimen/dp_40"
                 android:layout_marginEnd="@dimen/dp_20"
                 android:layout_marginBottom="@dimen/dp_40"
+                android:visibility="invisible"
                 android:progressDrawable="@drawable/horizontal_progressbar"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="parent"
@@ -186,51 +187,21 @@
                 app:layout_constraintTop_toBottomOf="@+id/txtfast_forward_backward_position" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <LinearLayout
-            android:id="@+id/layout_swap_gesture_fast_forward_10"
+        <TextView
+            android:id="@+id/txt_speed_double_onLong_press"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:text="@string/playing_2x_speed"
             android:visibility="invisible"
+            android:textColor="@color/white"
+            android:textSize="@dimen/sp_16"
+            android:background="@color/music_player_background"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.9"
+            app:layout_constraintHorizontal_bias="0.05"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.5">
-
-            <TextView
-                android:id="@+id/txtIncrement10"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/_00_00"
-                android:background="@color/music_player_background"
-                android:textColor="@color/white"
-                android:textSize="@dimen/sp_20" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_swap_gesture_backward_10"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:visibility="invisible"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.1"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.5">
-
-            <TextView
-                android:id="@+id/txtDecrement10"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/_00_00"
-                android:background="@color/music_player_background"
-                android:textColor="@color/white"
-                android:textSize="@dimen/sp_20" />
-        </LinearLayout>
+            app:layout_constraintVertical_bias="0.04" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
