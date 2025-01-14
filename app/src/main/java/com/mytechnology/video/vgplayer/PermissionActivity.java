@@ -1,21 +1,12 @@
 package com.mytechnology.video.vgplayer;
 
-import static android.content.ContentValues.TAG;
-
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -48,10 +39,11 @@ public class PermissionActivity extends AppCompatActivity {
             PERMISSIONS_STORAGE = new String[]{"android.permission.READ_EXTERNAL_STORAGE"};
         }
         intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         new Thread(() -> {
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1500);
                 getPermission();
             } catch (final Exception ex) {
                 Log.e("PermissionActivity", "onCreate: " + ex.getMessage());

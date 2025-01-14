@@ -19,7 +19,6 @@
             android:id="@+id/files_layout_row"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/dp_10"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/layout_menu"
             app:layout_constraintStart_toStartOf="parent"
@@ -95,20 +94,27 @@
 
         <LinearLayout
             android:id="@+id/layout_menu"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="@dimen/dp_30"
+            android:layout_height="match_parent"
+            android:gravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/files_layout_row"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0">
 
+            <CheckBox
+                android:id="@+id/checkBox"
+                android:layout_width="@dimen/dp_35"
+                android:layout_height="@dimen/dp_35"
+                android:visibility="gone"/>
+
             <ImageButton
                 android:id="@+id/files_menu_item"
                 android:layout_width="@dimen/dp_7"
-                android:layout_height="@dimen/dp_30"
-                android:layout_marginStart="@dimen/dp_7"
-                android:layout_marginEnd="@dimen/dp_7"
+                android:layout_height="@dimen/dp_40"
+                android:layout_gravity="center"
+                android:visibility="visible"
                 android:background="@drawable/menu_icon"
                 android:contentDescription="@string/image_description"
                 tools:ignore="TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />

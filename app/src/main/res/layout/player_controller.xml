@@ -14,12 +14,14 @@
             android:id="@+id/constraintLayout3"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+android:background="@drawable/controller_background"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/constraintLayout4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -39,8 +41,8 @@
 
                     <ImageView
                         android:id="@+id/exo_subtitle"
-                        android:layout_width="@dimen/dp_30"
-                        android:layout_height="@dimen/dp_30"
+                        android:layout_width="@dimen/dp_28"
+                        android:layout_height="@dimen/dp_28"
                         android:contentDescription="@string/image_description"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toStartOf="@+id/exo_previous"
@@ -52,8 +54,8 @@
 
                     <ImageView
                         android:id="@+id/exo_previous"
-                        android:layout_width="@dimen/dp_30"
-                        android:layout_height="@dimen/dp_30"
+                        android:layout_width="@dimen/dp_28"
+                        android:layout_height="@dimen/dp_28"
                         android:contentDescription="@string/image_description"
                         android:padding="@dimen/dp_2"
                         android:src="@drawable/previous"
@@ -66,8 +68,8 @@
 
                     <ImageView
                         android:id="@+id/exo_backward"
-                        android:layout_width="@dimen/dp_30"
-                        android:layout_height="@dimen/dp_30"
+                        android:layout_width="@dimen/dp_28"
+                        android:layout_height="@dimen/dp_28"
                         android:contentDescription="@string/image_description"
                         android:padding="@dimen/dp_2"
                         android:src="@drawable/backward_10sec"
@@ -80,8 +82,8 @@
 
                     <ImageView
                         android:id="@+id/exo_play_pause"
-                        android:layout_width="@dimen/dp_35"
-                        android:layout_height="@dimen/dp_35"
+                        android:layout_width="@dimen/dp_30"
+                        android:layout_height="@dimen/dp_30"
                         android:contentDescription="@string/image_description"
                         android:padding="@dimen/dp_2"
                         android:src="@drawable/pause"
@@ -94,8 +96,8 @@
 
                     <ImageView
                         android:id="@+id/exo_forward"
-                        android:layout_width="@dimen/dp_30"
-                        android:layout_height="@dimen/dp_30"
+                        android:layout_width="@dimen/dp_28"
+                        android:layout_height="@dimen/dp_28"
                         android:contentDescription="@string/image_description"
                         android:padding="@dimen/dp_2"
                         android:src="@drawable/forward_10_sec"
@@ -108,8 +110,8 @@
 
                     <ImageView
                         android:id="@+id/exo_next"
-                        android:layout_width="@dimen/dp_30"
-                        android:layout_height="@dimen/dp_30"
+                        android:layout_width="@dimen/dp_28"
+                        android:layout_height="@dimen/dp_28"
                         android:contentDescription="@string/image_description"
                         android:padding="@dimen/dp_2"
                         android:src="@drawable/next"
@@ -122,8 +124,8 @@
 
                     <ImageView
                         android:id="@+id/exo_settings"
-                        android:layout_width="@dimen/dp_30"
-                        android:layout_height="@dimen/dp_30"
+                        android:layout_width="@dimen/dp_28"
+                        android:layout_height="@dimen/dp_28"
                         android:contentDescription="@string/image_description"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -154,7 +156,7 @@
                         android:layout_marginStart="@dimen/dp_10"
                         android:padding="@dimen/dp_1"
                         android:text="@string/_00_00"
-                        android:textColor="#ffffff"
+                        android:textColor="@color/white"
                         android:textSize="@dimen/sp_10"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toStartOf="@+id/exo_progress_placeholder"
@@ -183,7 +185,7 @@
                         android:layout_marginEnd="@dimen/dp_10"
                         android:padding="@dimen/dp_1"
                         android:text="@string/_00_00"
-                        android:textColor="#ffffff"
+                        android:textColor="@color/white"
                         android:textSize="@dimen/sp_10"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -194,35 +196,116 @@
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-            <TextView
-                android:id="@+id/exo_main_text"
-                android:layout_width="0dp"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/exo_main_text_container"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/dp_14"
-                android:layout_marginTop="@dimen/dp_1"
-                android:text="@string/textview"
-                android:textColor="#ffffff"
-                android:textSize="@dimen/sp_11"
-                app:layout_constraintEnd_toStartOf="@+id/setting_list_Menu"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageView
-                android:id="@+id/setting_list_Menu"
-                android:layout_width="@dimen/dp_10"
-                android:layout_height="@dimen/dp_30"
-                android:layout_marginStart="@dimen/dp_15"
-                android:layout_marginEnd="@dimen/dp_10"
-                android:contentDescription="@string/image_description"
-                android:scaleType="fitXY"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="1.0"
-                app:layout_constraintStart_toEndOf="@+id/exo_main_text"
-                app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@drawable/menu_icon"
-                app:tint="@color/white" />
+                app:layout_constraintTop_toTopOf="parent">
+
+                <TextView
+                    android:id="@+id/exo_main_text"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="@dimen/dp_10"
+                    android:layout_marginEnd="@dimen/dp_10"
+                    android:layout_marginTop="@dimen/dp_1"
+                    android:text="@string/textview"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/sp_11"
+                    android:textAlignment="textStart"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/setting_list_Menu_container"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+                <LinearLayout
+                    android:id="@+id/setting_list_Menu_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="1.0"
+                    app:layout_constraintStart_toEndOf="@+id/exo_main_text"
+                    app:layout_constraintTop_toTopOf="parent">
+                    <ImageView
+                        android:id="@+id/setting_list_Menu"
+                        android:layout_width="@dimen/dp_10"
+                        android:layout_height="@dimen/dp_30"
+                        android:layout_marginStart="@dimen/dp_15"
+                        android:layout_marginEnd="@dimen/dp_10"
+                        android:contentDescription="@string/image_description"
+                        android:scaleType="fitXY"
+                        app:srcCompat="@drawable/menu_icon"
+                        app:tint="@color/white" />
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+
+
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_4"
+                android:orientation="horizontal"
+                app:layout_constraintBottom_toTopOf="@+id/constraintLayout4"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/exo_main_text_container"
+                app:layout_constraintVertical_bias="0.01999998">
+
+                <ImageView
+                    android:id="@+id/screen_rotation"
+                    android:layout_width="@dimen/dp_25"
+                    android:layout_height="@dimen/dp_25"
+                    android:layout_marginStart="@dimen/dp_10"
+                    android:layout_marginEnd="@dimen/dp_10"
+                    android:contentDescription="@string/image_description"
+                    android:scaleType="fitXY"
+                    app:srcCompat="@drawable/screen_rotation_icon"
+                    app:tint="@color/white" />
+                <LinearLayout
+                    android:id="@+id/extra_controls_layout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/exo_shuffle"
+                        android:layout_width="@dimen/dp_25"
+                        android:layout_height="@dimen/dp_25"
+                        android:layout_marginEnd="@dimen/dp_10"
+                        android:contentDescription="@string/image_description"
+                        android:scaleType="fitXY"
+                        android:src="@drawable/shuffle_icon"
+                        app:tint="@color/white" />
+
+                    <ImageView
+                        android:id="@+id/exo_repeat_toggle"
+                        android:layout_width="@dimen/dp_25"
+                        android:layout_height="@dimen/dp_25"
+                        android:layout_marginEnd="@dimen/dp_10"
+                        android:contentDescription="@string/image_description"
+                        android:scaleType="fitXY"
+                        android:src="@drawable/repeat_one"
+                        app:tint="@color/white" />
+                </LinearLayout>
+
+
+                <ImageView
+                    android:id="@+id/extra_controls"
+                    android:layout_width="@dimen/dp_25"
+                    android:layout_height="@dimen/dp_25"
+                    android:contentDescription="@string/image_description"
+                    android:scaleType="fitXY"
+                    app:srcCompat="@drawable/arrow_forward_menu_open"
+                    app:tint="@color/white" />
+
+            </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

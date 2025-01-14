@@ -8,14 +8,18 @@ import static com.mytechnology.video.vgplayer.videos.VideoPlayActivity.MY_SHARED
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.media.MediaMetadataRetriever;
 import android.text.format.Formatter;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
@@ -46,6 +50,8 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
     private final DeleteFileCallback callback;
     private final ReNameCallback reNameCallback;
     ArrayList<VideoModel> videoModelFull;
+    ArrayList<VideoModel> selectedVideoModels;
+    boolean multiSelection; // Flag to track if multiple items are selected
 
     public VideoFilesAdapter(final Context context, final ArrayList<VideoModel> videoModels, ItemClickListener clickListener, DeleteFileCallback callback, ReNameCallback reNameCallback) {
         this.context = context;
@@ -54,6 +60,8 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         this.videoModelFull = new ArrayList<>(videoModels);
         this.callback = callback;
         this.reNameCallback = reNameCallback;
+        this.selectedVideoModels = new ArrayList<>();
+        this.multiSelection = false;
     }
 
 
@@ -71,8 +79,63 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         if (preferences != null && !preferences.contains(videoModels.get(position).getPath())) {
             viewHolder.isNewVideoAvailable.setVisibility(View.VISIBLE);
         }
-        viewHolder.layout.setOnClickListener(v -> clickListener.onItemClick(viewHolder.getBindingAdapterPosition()));
+        if (multiSelection){
+            viewHolder.checkBox.setVisibility(View.VISIBLE);
+            viewHolder.filesMenu.setVisibility(View.GONE);
+        } else {
+            viewHolder.checkBox.setVisibility(View.GONE);
+            viewHolder.filesMenu.setVisibility(View.VISIBLE);
+        }
+
+        viewHolder.layout.setOnClickListener(v -> {
+            if (multiSelection){
+                viewHolder.checkBox.setVisibility(View.VISIBLE);
+                viewHolder.filesMenu.setVisibility(View.GONE);
+                if (selectedVideoModels.contains(videoModels.get(viewHolder.getBindingAdapterPosition()))) {
+                    selectedVideoModels.remove(videoModels.get(viewHolder.getBindingAdapterPosition()));
+                    viewHolder.layout.setBackgroundColor(Color.WHITE);
+                    viewHolder.checkBox.setChecked(false);
+                } else {
+                    selectedVideoModels.add(videoModels.get(viewHolder.getBindingAdapterPosition()));
+                    viewHolder.layout.setBackgroundColor(android.graphics.Color.red(Color.RED));
+                    viewHolder.checkBox.setChecked(true);
+                }
+            } else {
+                clickListener.onItemClick(viewHolder.getBindingAdapterPosition());
+            }
+            if (selectedVideoModels.isEmpty()){
+                multiSelection = false;
+            }
+
+        });
         viewHolder.filesMenuItem.setOnClickListener(v -> setUpMenuButton(v, viewHolder));
+
+        viewHolder.layout.setOnLongClickListener(new View.OnLongClickListener() {
+            @SuppressLint("NotifyDataSetChanged")
+            @Override
+            public boolean onLongClick(View v) {
+                multiSelection = true;
+
+                viewHolder.checkBox.setVisibility(View.VISIBLE);
+                viewHolder.filesMenu.setVisibility(View.GONE);
+                if (selectedVideoModels.contains(videoModels.get(viewHolder.getBindingAdapterPosition()))) {
+                    selectedVideoModels.remove(videoModels.get(viewHolder.getBindingAdapterPosition()));
+                    viewHolder.layout.setBackgroundColor(Color.WHITE);
+                    viewHolder.checkBox.setChecked(false);
+                } else {
+                    selectedVideoModels.add(videoModels.get(viewHolder.getBindingAdapterPosition()));
+                    viewHolder.layout.setBackgroundColor(android.graphics.Color.red(Color.RED));
+                    viewHolder.checkBox.setChecked(true);
+                }
+                if (selectedVideoModels.isEmpty()){
+                    multiSelection = false;
+                }
+               notifyDataSetChanged();
+                return true;
+            }
+        });
+
+
     }
 
     public int getItemCount() {
@@ -158,7 +221,9 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         ConstraintLayout layout;
         ImageView thumbnail;
         TextView duration, isNewVideoAvailable;
-        ImageButton filesMenuItem;
+        LinearLayout filesMenuItem;
+        ImageView filesMenu;
+        CheckBox checkBox;
 
         public VideoFilesViewHolder(final View view) {
             super(view);
@@ -169,7 +234,9 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
             layout = binding.filesLayoutRow;
             duration = binding.duration;
             isNewVideoAvailable = binding.textViewNew;
-            filesMenuItem = binding.filesMenuItem;
+            filesMenuItem = binding.layoutMenu;
+            filesMenu = binding.filesMenuItem;
+            checkBox = binding.checkBox;
         }
     }
 }

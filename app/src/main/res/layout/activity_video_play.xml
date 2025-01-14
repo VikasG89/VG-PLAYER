@@ -26,9 +26,10 @@
         app:played_color="@color/teal_200"
         app:repeat_toggle_modes="one|all"
         app:resize_mode="fit"
+        app:show_shuffle_button="true"
         app:show_buffering="always"
         app:show_subtitle_button="true"
-        app:show_timeout="3000"
+        app:show_timeout="1000"
         app:surface_type="surface_view"
         app:use_controller="true">
 
@@ -38,7 +39,7 @@
         android:id="@+id/lockScreen"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@color/music_player_background"
+        android:background="@drawable/controller_background"
         android:contentDescription="@string/image_description"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"

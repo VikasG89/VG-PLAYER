@@ -8,9 +8,12 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.format.Formatter;
@@ -20,6 +23,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,15 +52,14 @@ import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RenderersFactory;
-import androidx.media3.exoplayer.SeekParameters;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.extractor.DefaultExtractorsFactory;
-import androidx.media3.extractor.ExtractorsFactory;
 import androidx.media3.extractor.flac.FlacExtractor;
 import androidx.media3.extractor.mp3.Mp3Extractor;
 import androidx.media3.ui.PlayerView;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.mytechnology.video.vgplayer.MainActivity;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoPlayBinding;
 import com.mytechnology.video.vgplayer.utility.OnSwipeListener;
@@ -75,7 +78,7 @@ import java.util.TimerTask;
 
 
 @UnstableApi
-public class VideoPlayActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener {
+public class VideoPlayActivity extends AppCompatActivity {
 
     public static final String MY_SHARED_PREFS_VIDEO = "video_player";
     protected ActivityVideoPlayBinding binding;
@@ -86,7 +89,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     PlayerView playerView;
     private ExoPlayer player;
     private ConstraintLayout mainLayout;
-    protected ImageView previous, next, backWard, forward, playPause, lockScreen, extraMenu;
+    protected ImageView previous, next, backWard, forward, playPause, lockScreen, extraMenu, screenRotation, extraControls;
+    LinearLayout extraControlsLayout;
     private TextView trackName;
     int videoFilesAdapterPosition;
     static String myVFolder;
@@ -96,14 +100,11 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     boolean isScreenLocked = false;
 
     // Audio Focus Variables
-    //AudioAttributes playbackAttributes;
     androidx.media3.common.AudioAttributes playbackAttributes;
-    //AudioFocusRequest focusRequest;
-    final Object focusLock = new Object();
-    boolean playbackDelayed = false;
-    boolean playbackNowAuthorized = false;
-    boolean resumeOnFocusGain = false;
+
+
     public static boolean isVideoPlaying = false;
+    boolean extraControlShowing = false;
 
     // swap & zoom variable
     ConstraintLayout layoutSwapGesture;
@@ -156,6 +157,9 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         playPause = playerView.findViewById(R.id.exo_play_pause);
         trackName = playerView.findViewById(R.id.exo_main_text);
         lockScreen = binding.lockScreen;
+        screenRotation = playerView.findViewById(R.id.screen_rotation);
+        extraControls = playerView.findViewById(R.id.extra_controls);
+        extraControlsLayout = playerView.findViewById(R.id.extra_controls_layout);
         layoutSwapGesture = mainLayout.findViewById(R.id.layout_swap_gesture);
         controllerMainLayout = playerView.findViewById(R.id.layout_player_controller);
         volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
@@ -175,24 +179,8 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
         editor = preferences.edit();
 
-
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        /*playbackAttributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_GAME)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                    .setAudioAttributes(playbackAttributes).setAcceptsDelayedFocusGain(true)
-                    .setOnAudioFocusChangeListener(this, Handler.createAsync(Looper.getMainLooper())).build();
-        }*/
-
         playbackAttributes = new AudioAttributes.Builder().build();
-
-        /*focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(playbackAttributes)
-                .setAcceptsDelayedFocusGain(true)
-                .setOnAudioFocusChangeListener(this)
-                .build();*/
 
         // Getting Intent Data
         videoFilesAdapterPosition = getIntent().getIntExtra("position", 0);
@@ -202,12 +190,12 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         // Initialize ExoPlayer
         initializeExoPlayer();
 
-
         // Setting Auto Fullscreen enabled OR disabled
         playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
             if (visibility == View.GONE) {
                 setFullScreen(true);
                 lockScreen.setVisibility(View.INVISIBLE);
+                extraControlsLayout.setVisibility(View.GONE);
             } else if (visibility == View.VISIBLE) {
                 setFullScreen(false);
                 lockScreen.setVisibility(View.VISIBLE);
@@ -309,7 +297,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                                     hideControllerSwipe();
                                 } else if (e1.getX() > (float) mainLayout.getWidth() / 2) {
                                     // Right half - Volume
-                                    int scrollRange = mainLayout.getHeight() * 2;
+                                    int scrollRange = mainLayout.getHeight();
                                     double deltaYScaled = (deltaY / (double) scrollRange) * 100; // Normalize deltaY to a 0-100 range
                                     maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
                                     int mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -536,6 +524,17 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
 
         });
 
+        screenRotation.setOnClickListener(v -> changeOrientation());
+
+        extraControls.setOnClickListener(v -> {
+            extraControlShowing = !extraControlShowing;
+            if (extraControlShowing) {
+                extraControlsLayout.setVisibility(View.VISIBLE);
+            } else {
+                extraControlsLayout.setVisibility(View.GONE);
+            }
+        });
+
         OnBackPressedDispatcher dispatcher = getOnBackPressedDispatcher();
         dispatcher.addCallback(new OnBackPressedCallback(true) {
             @Override
@@ -548,8 +547,13 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 player.release();
                 //mediaSourceList.clear();
                 mediaItemList.clear();
-                Intent intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
-                intent.putExtra("Folder Name", myVFolder);
+                Intent intent;
+                if (myVFolder.equals("NO Folder Name")) {
+                    intent = new Intent(VideoPlayActivity.this, MainActivity.class);
+                } else {
+                    intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
+                    intent.putExtra("Folder Name", myVFolder);
+                }
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();
@@ -567,7 +571,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
             }
         };
         Timer timer = new Timer();
-        timer.schedule(timerTask, 2000);
+        timer.schedule(timerTask, 1000);
     }
 
     @OptIn(markerClass = UnstableApi.class)
@@ -582,7 +586,7 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     private void initializeExoPlayer() {
         RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true)
                 .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
-        ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
+        DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
                 .setMp3ExtractorFlags(Mp3Extractor.FLAG_ENABLE_INDEX_SEEKING)
                 .setFlacExtractorFlags(FlacExtractor.FLAG_DISABLE_ID3_METADATA);
         DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(this)
@@ -591,7 +595,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
                 .setMediaSourceFactory(new DefaultMediaSourceFactory(this, extractorsFactory))
                 .setMediaSourceFactory(mediaSourceFactory)
                 .setHandleAudioBecomingNoisy(true)
-                .setSeekParameters(new SeekParameters(10000, 10000))
                 .setAudioAttributes(playbackAttributes, true)
                 .build();
 
@@ -628,19 +631,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         }
         player.setPlayWhenReady(true);
         trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
-
-        /*int res = audioManager.requestAudioFocus(focusRequest);
-        synchronized (focusLock) {
-            if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
-                playbackNowAuthorized = false;
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                playbackNowAuthorized = true;
-                playVideo();
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
-                playbackDelayed = true;
-                playbackNowAuthorized = false;
-            }
-        }*/
         savePreference(player.getCurrentPosition());
     }
 
@@ -648,47 +638,6 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
         player.setPlayWhenReady(true);
         isVideoPlaying = true;
         playPause.setImageResource(R.drawable.pause);
-    }
-
-    private void handleCallOrCommunicationState() {
-        if (playbackDelayed || resumeOnFocusGain) {
-            synchronized (focusLock) {
-                playbackDelayed = false;
-                resumeOnFocusGain = false;
-                pauseVideo();
-            }
-        }
-    }
-
-    @Override
-    public void onAudioFocusChange(int focusChange) {
-        switch (focusChange) {
-            case AudioManager.AUDIOFOCUS_GAIN:
-                if (playbackDelayed || resumeOnFocusGain) {
-                    synchronized (focusLock) {
-                        playbackDelayed = false;
-                        resumeOnFocusGain = false;
-                    }
-                    playVideo();
-                }
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS:
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                synchronized (focusLock) {
-                    resumeOnFocusGain = (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) && player.isPlaying();
-                    playbackDelayed = false;
-                }
-                pauseVideo();
-                break;
-            case AudioManager.MODE_IN_CALL:
-            case AudioManager.MODE_IN_COMMUNICATION:
-                handleCallOrCommunicationState();
-                break;
-            default:
-                Log.w("AudioFocus", "Unexpected focus change: " + focusChange);
-                pauseVideo();
-        }
     }
 
     private void previousVideoPlay() {
@@ -743,23 +692,33 @@ public class VideoPlayActivity extends AppCompatActivity implements AudioManager
     }
 
     private void setFullScreen(boolean isFullScreen) {
-        WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(this.getWindow(), this.getWindow().getDecorView());
-        insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-        if (isFullScreen) {
-            insetsController.hide(WindowInsetsCompat.Type.systemBars());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(this.getWindow(), this.getWindow().getDecorView());
+            insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            if (isFullScreen) {
+                insetsController.hide(WindowInsetsCompat.Type.systemBars());
+            } else {
+                insetsController.show(WindowInsetsCompat.Type.systemBars());
+            }
         } else {
-            insetsController.show(WindowInsetsCompat.Type.systemBars());
+            if (isFullScreen) {
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                        WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            } else {
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            }
         }
     }
 
-   /* @SuppressLint("SourceLockedOrientationActivity")
+    @SuppressLint("SourceLockedOrientationActivity")
     private void changeOrientation() {
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        } else {
+        int currentOrientation = getResources().getConfiguration().orientation;
+        if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        } else if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
-    }*/
+    }
 
     @Override
     protected void onPause() {

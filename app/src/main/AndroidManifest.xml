@@ -83,9 +83,7 @@
             android:name=".videos.VideoPlayActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|navigation|locale|layoutDirection|screenLayout|uiMode|density|fontScale|colorMode"
             android:exported="false"
-            android:screenOrientation="sensor"
-            android:theme="@style/SplashScreen"
-            tools:ignore="DiscouragedApi" />
+            android:theme="@style/VideoPlayerTheme"/>
         <activity
             android:name=".videos.VideoFilesActivity"
             android:exported="false" />
