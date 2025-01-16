@@ -16,4 +16,32 @@
     <string name="textview">Text View</string>
     <string name="name_of_song">Name of Song</string>
     <string name="_new">New</string>
+    <string name="play">Play</string>
+    <string name="share">Share</string>
+    <string name="search">Search</string>
+    <string name="properties">Properties</string>
+    <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+    <string name="sort_by">Sort By</string>
+    <string name="sort_by_name">By Name</string>
+    <string name="sort_by_date">By Date</string>
+    <string name="sort_by_size">By Size</string>
+    <string name="sort_by_duration">By Duration</string>
+    <string name="filename">File Name</string>
+    <string name="share_app">Share App Link</string>
+    <string name="rate_us">Rate Us</string>
+    <string name="licences">Licences</string>
+    <string name="about">About Us</string>
+    <string name="settings">Settings</string>
+    <string name="_100">100%</string>
+
+    <string name="write_your_review1" translatable="false">\t\t\tPlease feel free to give us your five star rating and write a review on our App. Our Developer will happy to here you about your experience.
+                                       Your Review Help us to improve our services. \n \t\tTHANKS FOR YOUR HUMBLE review! </string>
+    <string name="give_us_star_rating"><u>Give us Five Star Rating!</u></string>
+
+    <string name="dark_theme">Dark</string>
+    <string name="default_theme">Default</string>
+    <string name="light_theme">Light</string>
+    <string name="choose_theme">Choose Theme -</string>
+    <string name="playing_2x_speed">Playing 2x Speed</string>
 </resources>

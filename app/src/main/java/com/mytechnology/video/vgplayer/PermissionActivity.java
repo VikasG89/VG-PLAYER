@@ -7,14 +7,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -41,10 +38,11 @@ public class PermissionActivity extends AppCompatActivity {
             PERMISSIONS_STORAGE = new String[]{"android.permission.READ_EXTERNAL_STORAGE"};
         }
         intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         new Thread(() -> {
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1500);
                 getPermission();
             } catch (final Exception ex) {
                 Log.e("PermissionActivity", "onCreate: " + ex.getMessage());
@@ -53,13 +51,16 @@ public class PermissionActivity extends AppCompatActivity {
 
     }
 
-    public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] array, @NonNull final int[] array2) {
-        super.onRequestPermissionsResult(requestCode, array, array2);
+    public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1) {
-            if (array2.length > 0 && array2[0] == PackageManager.PERMISSION_GRANTED) {
-                permission = PackageManager.PERMISSION_GRANTED;
-                startActivity(intent);
-                finish();
+            if (grantResults.length > 0) {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    permission = PackageManager.PERMISSION_GRANTED;
+                    startActivity(intent);
+                    finish();
+                }
+
             }
         } else {
             Toast.makeText(this, "Permissions Denied!!\nAll Permissions Are Required", Toast.LENGTH_LONG).show();
@@ -68,7 +69,7 @@ public class PermissionActivity extends AppCompatActivity {
     }
 
     private void getPermission() {
-        if (ContextCompat.checkSelfPermission(this, Arrays.toString(PermissionActivity.PERMISSIONS_STORAGE))!= PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Arrays.toString(PermissionActivity.PERMISSIONS_STORAGE)) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, PermissionActivity.PERMISSIONS_STORAGE, 1);
         } else {
             startActivity(intent);
@@ -76,4 +77,5 @@ public class PermissionActivity extends AppCompatActivity {
         }
 
     }
+
 }

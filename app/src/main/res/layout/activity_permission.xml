@@ -1,8 +1,10 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:fragments="http://schemas.android.com/apk/res-auto"
+
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
     android:id="@+id/main"
     android:gravity="center"
     android:orientation="vertical">
@@ -23,8 +25,8 @@
         android:layout_height="@dimen/dp_120"
         android:backgroundTint="#7a99b1"
         android:contentDescription="@string/app_name"
-        android:src="@drawable/splash_screen"
-        fragments:tint="#ee2c6e" />
+        android:src="@drawable/play_circle_outline"
+        app:tint="#ee2c6e"/>
 
     <TextView
         android:layout_width="match_parent"

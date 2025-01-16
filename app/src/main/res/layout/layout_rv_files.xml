@@ -1,13 +1,13 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:fragments="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/files_layout_row"
+    android:id="@+id/rv_layout_files"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="@dimen/dp_4"
-    fragments:cardCornerRadius="@dimen/dp_5"
-    fragments:cardElevation="@dimen/dp_4">
+    app:cardCornerRadius="@dimen/dp_5"
+    app:cardElevation="@dimen/dp_4">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout2"
@@ -15,67 +15,112 @@
         android:layout_height="match_parent"
         tools:ignore="UseCompoundDrawables">
 
-        <ImageView
-            android:id="@+id/thumbnail"
-            android:layout_width="@dimen/dp_85"
-            android:layout_height="@dimen/dp_50"
-            android:background="@color/black"
-            android:contentDescription="@string/image_description"
-            android:src="@drawable/baseline_music_note_24"
-            fragments:layout_constraintBottom_toBottomOf="parent"
-            fragments:layout_constraintEnd_toStartOf="@+id/fileTitle"
-            fragments:layout_constraintStart_toStartOf="parent"
-            fragments:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/fileTitle"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/files_layout_row"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:padding="@dimen/dp_2"
-            android:paddingStart="@dimen/dp_5"
-            android:paddingEnd="@dimen/dp_1"
-            android:text="@string/folder_name"
-            android:textColor="@color/night_black"
-            android:textSize="@dimen/sp_11"
-            fragments:layout_constraintBottom_toBottomOf="parent"
-            fragments:layout_constraintEnd_toEndOf="parent"
-            fragments:layout_constraintHorizontal_bias="0.5"
-            fragments:layout_constraintStart_toEndOf="@+id/thumbnail"
-            fragments:layout_constraintTop_toTopOf="parent"
-            fragments:layout_constraintVertical_bias="0.5" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/layout_menu"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/textViewNew"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="#D91010"
-            android:fontFamily="@font/berkshire_swash"
-            android:padding="@dimen/dp_2"
-            android:text="@string/_new"
-            android:textColor="@color/white"
-            android:textSize="@dimen/sp_9"
-            android:visibility="invisible"
-            fragments:layout_constraintBottom_toBottomOf="@+id/thumbnail"
-            fragments:layout_constraintEnd_toStartOf="@+id/fileTitle"
-            fragments:layout_constraintHorizontal_bias="1"
-            fragments:layout_constraintStart_toStartOf="parent"
-            fragments:layout_constraintTop_toTopOf="@+id/thumbnail"
-            fragments:layout_constraintVertical_bias="0.01" />
+            <ImageView
+                android:id="@+id/thumbnail"
+                android:layout_width="@dimen/dp_80"
+                android:layout_height="@dimen/dp_50"
+                android:background="@color/black"
+                android:contentDescription="@string/image_description"
+                android:src="@drawable/baseline_music_note_24"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/fileTitle"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.5" />
 
-        <TextView
-            android:id="@+id/duration"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@color/black"
-            android:text="@string/_00_00"
-            android:textColor="@color/white"
-            android:textSize="@dimen/sp_10"
-            fragments:layout_constraintBottom_toBottomOf="parent"
-            fragments:layout_constraintEnd_toEndOf="@+id/thumbnail"
-            fragments:layout_constraintHorizontal_bias="1.0"
-            fragments:layout_constraintStart_toStartOf="parent"
-            fragments:layout_constraintTop_toBottomOf="@+id/textViewNew"
-            fragments:layout_constraintVertical_bias="1.0" />
+            <TextView
+                android:id="@+id/fileTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/dp_2"
+                android:padding="@dimen/dp_2"
+                android:paddingStart="@dimen/dp_5"
+                android:paddingEnd="@dimen/dp_1"
+                android:text="@string/filename"
+                android:textColor="@color/night_black"
+                android:textSize="@dimen/sp_11"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/thumbnail"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.5" />
+
+            <TextView
+                android:id="@+id/textViewNew"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/eclipses_background"
+                android:fontFamily="@font/berkshire_swash"
+                android:padding="@dimen/dp_2"
+                android:text="@string/_new"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_9"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="@+id/thumbnail"
+                app:layout_constraintEnd_toStartOf="@+id/fileTitle"
+                app:layout_constraintHorizontal_bias="1"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/thumbnail"
+                app:layout_constraintVertical_bias="0.01" />
+
+            <TextView
+                android:id="@+id/duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/black"
+                android:text="@string/_00_00"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_10"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="@+id/thumbnail"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textViewNew"
+                app:layout_constraintVertical_bias="1.0" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+        <LinearLayout
+            android:id="@+id/layout_menu"
+            android:layout_width="@dimen/dp_30"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/files_layout_row"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0">
+
+            <CheckBox
+                android:id="@+id/checkBox"
+                android:layout_width="@dimen/dp_35"
+                android:layout_height="@dimen/dp_35"
+                android:visibility="gone"/>
+
+            <ImageButton
+                android:id="@+id/files_menu_item"
+                android:layout_width="@dimen/dp_7"
+                android:layout_height="@dimen/dp_40"
+                android:layout_gravity="center"
+                android:visibility="visible"
+                android:background="@drawable/menu_icon"
+                android:contentDescription="@string/image_description"
+                tools:ignore="TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />
+
+        </LinearLayout>
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

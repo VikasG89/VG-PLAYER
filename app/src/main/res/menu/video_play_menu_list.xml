@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="@string/share"
+        android:id="@+id/video_play_list_share"
+        app:showAsAction="never"
+        android:icon="@drawable/share_icon"/>
+
+    <item android:title="@string/properties"
+        android:id="@+id/video_play_list_properties"
+        app:showAsAction="never"
+        android:icon="@drawable/info_icon"/>
+
+<!--    <item android:title="@string/delete"-->
+<!--        android:id="@+id/video_play_list_delete"-->
+<!--        app:showAsAction="never"-->
+<!--        android:icon="@drawable/delete_forever_icon"/>-->
+
+<!--    <item app:showAsAction="never"-->
+<!--        android:id="@+id/video_play_list_rename"-->
+<!--        android:title="@string/rename"-->
+<!--        android:icon="@drawable/rename_icon"/>-->
+</menu>

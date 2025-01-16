@@ -18,6 +18,7 @@ public class OnSwipeListener implements View.OnTouchListener {
     }
 
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouch(final View view, final MotionEvent motionEvent) {
         return gestureDetector.onTouchEvent(motionEvent);

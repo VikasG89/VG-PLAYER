@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.android.gms.oss-licenses-plugin")
 }
 
 android {
@@ -8,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.mytechnology.video.vgplayer"
-        minSdk = 28
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -49,4 +50,10 @@ dependencies {
     implementation (libs.media3.ui)
 
     implementation(libs.glide)
+
+    implementation(libs.review)
+    implementation(libs.play.services.oss.licenses)
+
+    implementation("com.github.anilbeesetti.nextlib:nextlib-media3ext:v0.8.4") // To add media3 software decoders and extensions
+    implementation("com.github.anilbeesetti.nextlib:nextlib-mediainfo:v0.8.4") // To get media info through ffmpeg
 }
