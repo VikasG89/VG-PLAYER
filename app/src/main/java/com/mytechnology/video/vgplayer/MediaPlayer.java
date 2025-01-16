@@ -71,6 +71,7 @@ public class MediaPlayer extends AppCompatActivity {
                 }
             }
         });
+
     }
 
     private void setFullScreen(boolean isFullScreen) {

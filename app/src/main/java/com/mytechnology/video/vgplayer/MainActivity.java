@@ -41,8 +41,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity;
 import com.mytechnology.video.vgplayer.databinding.ActivityMainBinding;
 import com.mytechnology.video.vgplayer.extras.AppSettings;
+import com.mytechnology.video.vgplayer.extras.MainActivityAdapter;
 import com.mytechnology.video.vgplayer.extras.ReviewActivity;
-import com.mytechnology.video.vgplayer.videos.VideoFilesAdapter;
 import com.mytechnology.video.vgplayer.videos.VideoFolderAdapter;
 import com.mytechnology.video.vgplayer.videos.VideoModel;
 import com.mytechnology.video.vgplayer.videos.VideoPlayActivity;
@@ -50,13 +50,13 @@ import com.mytechnology.video.vgplayer.videos.VideoPlayActivity;
 import java.io.File;
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements VideoFilesAdapter.ItemClickListener, VideoFilesAdapter.DeleteFileCallback, VideoFilesAdapter.ReNameCallback {
+public class MainActivity extends AppCompatActivity implements MainActivityAdapter.ItemClickListener {
 
     RecyclerView recyclerView;
     ArrayList<VideoModel> videoArrayList = new ArrayList<>();
     boolean permissionGrantForSdk33;
     RecyclerView videoFilesRV;
-    VideoFilesAdapter videoFilesAdapter;
+    MainActivityAdapter videoFilesAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +79,6 @@ public class MainActivity extends AppCompatActivity implements VideoFilesAdapter
         (recyclerView = inflate.videoFolderRV).setLayoutManager(new LinearLayoutManager(this));
         final VideoFolderAdapter videoFolderAdapter = new VideoFolderAdapter(this, videoFolderList);
         recyclerView.setAdapter(videoFolderAdapter);
-
     }
 
     @Override
@@ -92,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements VideoFilesAdapter
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.mainMenu_search) {
             videoFilesRV.setLayoutManager(new LinearLayoutManager(this));
-            videoFilesAdapter = new VideoFilesAdapter(this, videoArrayList, this, this, this);
+            videoFilesAdapter = new MainActivityAdapter(this, videoArrayList, this);
             videoFilesRV.setAdapter(videoFilesAdapter);
 
             // for search Videos from folder page / MainActivity
@@ -196,8 +195,20 @@ public class MainActivity extends AppCompatActivity implements VideoFilesAdapter
                 .show();
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     @Override
-    public void deleteFile(int adaptorPosition) {
+    public void onItemClick(int position, MainActivityAdapter.FilesViewHolder viewHolder) {
+        Intent intent = new Intent(this, VideoPlayActivity.class);
+        intent.putExtra("position", position);
+        intent.putExtra("Parcelable", videoArrayList);
+        intent.putExtra("Folder Name", "NO Folder Name");
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    @Override
+    public void deleteFile(int position) {
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
         builder.setTitle("Delete Video?")
                 .setIcon(R.drawable.delete_forever_icon)
@@ -207,13 +218,13 @@ public class MainActivity extends AppCompatActivity implements VideoFilesAdapter
                     if (!permissionGrantForSdk33) {
                         requestForStoragePermissions(MainActivity.this, storageActivityResultLauncher);
                     } else {
-                        File file = new File(videoArrayList.get(adaptorPosition).getPath());
+                        File file = new File(videoArrayList.get(position).getPath());
                         boolean deleted = file.delete();
                         if (deleted) {
                             // File deleted successfully
-                            videoArrayList.remove(adaptorPosition);
-                            videoFilesAdapter.notifyItemRemoved(adaptorPosition);
-                            videoFilesAdapter.notifyItemRangeChanged(adaptorPosition, videoArrayList.size());
+                            videoArrayList.remove(position);
+                            videoFilesAdapter.notifyItemRemoved(position);
+                            videoFilesAdapter.notifyItemRangeChanged(position, videoArrayList.size());
                         } else {
                             // File deletion failed
                             Toast.makeText(this, "Error Deleting File!\n Please try again!!", Toast.LENGTH_SHORT).show();
@@ -229,19 +240,7 @@ public class MainActivity extends AppCompatActivity implements VideoFilesAdapter
 
     @OptIn(markerClass = UnstableApi.class)
     @Override
-    public void onItemClick(int adapterPotion) {
-        Intent intent = new Intent(this, VideoPlayActivity.class);
-        intent.putExtra("position", adapterPotion);
-        intent.putExtra("Parcelable", videoArrayList);
-        intent.putExtra("Folder Name", "NO Folder Name");
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
-    }
-
-    @OptIn(markerClass = UnstableApi.class)
-    @Override
-    public void reNameFile(int adaptorPosition) {
+    public void reNameFile(int position) {
         permissionGrantForSdk33 = checkStoragePermissions(MainActivity.this);
         if (!permissionGrantForSdk33) {
             requestForStoragePermissions(MainActivity.this, storageActivityResultLauncher);
@@ -251,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements VideoFilesAdapter
                     .setIcon(R.drawable.rename_icon)
                     .setMessage("Are you sure you want to rename this video?");
             EditText edtRename = new EditText(this);
-            File file = new File(videoArrayList.get(adaptorPosition).getPath());
+            File file = new File(videoArrayList.get(position).getPath());
             String fileName = file.getName();
             edtRename.setText(fileName);
             builder.setView(edtRename);
@@ -261,8 +260,8 @@ public class MainActivity extends AppCompatActivity implements VideoFilesAdapter
                 boolean isRenamed = file.renameTo(new File(file.getParentFile(), newFileName));
                 if (isRenamed) {
                     SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
-                    preferences.edit().remove(videoArrayList.get(adaptorPosition).getPath()).apply();
-                    videoFilesAdapter.notifyItemChanged(adaptorPosition);
+                    preferences.edit().remove(videoArrayList.get(position).getPath()).apply();
+                    videoFilesAdapter.notifyItemChanged(position);
                     recreate();
                 } else {
                     Toast.makeText(this, "Error Renaming File! Please try again!!", Toast.LENGTH_SHORT).show();

@@ -8,16 +8,14 @@ import static com.mytechnology.video.vgplayer.videos.VideoPlayActivity.MY_SHARED
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.media.MediaMetadataRetriever;
 import android.text.format.Formatter;
-import android.view.KeyEvent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
@@ -44,24 +42,20 @@ import java.util.Date;
 import java.util.Locale;
 
 public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.VideoFilesViewHolder> {
+    private static final String TAG = VideoFilesAdapter.class.getSimpleName();
     Context context;
     ArrayList<VideoModel> videoModels;
     private final ItemClickListener clickListener;
-    private final DeleteFileCallback callback;
-    private final ReNameCallback reNameCallback;
     ArrayList<VideoModel> videoModelFull;
     ArrayList<VideoModel> selectedVideoModels;
-    boolean multiSelection; // Flag to track if multiple items are selected
+    boolean multiSelection = false; // Flag to track if multiple items are selected
 
-    public VideoFilesAdapter(final Context context, final ArrayList<VideoModel> videoModels, ItemClickListener clickListener, DeleteFileCallback callback, ReNameCallback reNameCallback) {
+    public VideoFilesAdapter(final Context context, final ArrayList<VideoModel> videoModels, ItemClickListener clickListener) {
         this.context = context;
         this.videoModels = videoModels;
         this.clickListener = clickListener;
         this.videoModelFull = new ArrayList<>(videoModels);
-        this.callback = callback;
-        this.reNameCallback = reNameCallback;
         this.selectedVideoModels = new ArrayList<>();
-        this.multiSelection = false;
     }
 
 
@@ -70,6 +64,7 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         return new VideoFilesViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.layout_rv_files, viewGroup, false));
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     @OptIn(markerClass = UnstableApi.class)
     public void onBindViewHolder(final VideoFilesViewHolder viewHolder, final int position) {
         ((RequestBuilder<?>) Glide.with(context).load(videoModels.get(position).getPath()).centerCrop()).into(viewHolder.thumbnail);
@@ -79,62 +74,41 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         if (preferences != null && !preferences.contains(videoModels.get(position).getPath())) {
             viewHolder.isNewVideoAvailable.setVisibility(View.VISIBLE);
         }
-        if (multiSelection){
+
+        if (multiSelection) {
             viewHolder.checkBox.setVisibility(View.VISIBLE);
             viewHolder.filesMenu.setVisibility(View.GONE);
+            viewHolder.checkBox.setChecked(selectedVideoModels.contains(videoModels.get(position)));
+
         } else {
             viewHolder.checkBox.setVisibility(View.GONE);
             viewHolder.filesMenu.setVisibility(View.VISIBLE);
         }
 
         viewHolder.layout.setOnClickListener(v -> {
-            if (multiSelection){
-                viewHolder.checkBox.setVisibility(View.VISIBLE);
-                viewHolder.filesMenu.setVisibility(View.GONE);
-                if (selectedVideoModels.contains(videoModels.get(viewHolder.getBindingAdapterPosition()))) {
-                    selectedVideoModels.remove(videoModels.get(viewHolder.getBindingAdapterPosition()));
-                    viewHolder.layout.setBackgroundColor(Color.WHITE);
+            if (multiSelection) {
+                if (selectedVideoModels.contains(videoModels.get(position))) {
+                    selectedVideoModels.remove(videoModels.get(position));
                     viewHolder.checkBox.setChecked(false);
+                    Log.d(TAG, "onBindViewHolder: " + selectedVideoModels.size());
                 } else {
-                    selectedVideoModels.add(videoModels.get(viewHolder.getBindingAdapterPosition()));
-                    viewHolder.layout.setBackgroundColor(android.graphics.Color.red(Color.RED));
+                    selectedVideoModels.add(videoModels.get(position));
                     viewHolder.checkBox.setChecked(true);
+                    Log.d(TAG, "onBindViewHolder: " + selectedVideoModels.size());
                 }
             } else {
-                clickListener.onItemClick(viewHolder.getBindingAdapterPosition());
+                clickListener.onItemClick(position, viewHolder);
             }
-            if (selectedVideoModels.isEmpty()){
-                multiSelection = false;
-            }
+           notifyDataSetChanged();
 
         });
-        viewHolder.filesMenuItem.setOnClickListener(v -> setUpMenuButton(v, viewHolder));
 
-        viewHolder.layout.setOnLongClickListener(new View.OnLongClickListener() {
-            @SuppressLint("NotifyDataSetChanged")
-            @Override
-            public boolean onLongClick(View v) {
-                multiSelection = true;
+        viewHolder.filesMenuItem.setOnClickListener((View v) -> setUpMenuButton(v, viewHolder));
 
-                viewHolder.checkBox.setVisibility(View.VISIBLE);
-                viewHolder.filesMenu.setVisibility(View.GONE);
-                if (selectedVideoModels.contains(videoModels.get(viewHolder.getBindingAdapterPosition()))) {
-                    selectedVideoModels.remove(videoModels.get(viewHolder.getBindingAdapterPosition()));
-                    viewHolder.layout.setBackgroundColor(Color.WHITE);
-                    viewHolder.checkBox.setChecked(false);
-                } else {
-                    selectedVideoModels.add(videoModels.get(viewHolder.getBindingAdapterPosition()));
-                    viewHolder.layout.setBackgroundColor(android.graphics.Color.red(Color.RED));
-                    viewHolder.checkBox.setChecked(true);
-                }
-                if (selectedVideoModels.isEmpty()){
-                    multiSelection = false;
-                }
-               notifyDataSetChanged();
-                return true;
-            }
+        viewHolder.layout.setOnLongClickListener(v -> {
+            clickListener.longClick(position, viewHolder);
+            return true;
         });
-
 
     }
 
@@ -180,9 +154,9 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
                 dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, which) -> dialog1.dismiss());
                 dialog.show();
             } else if (item.getItemId() == R.id.menuItem_delete) {
-                callback.deleteFile(holder.getBindingAdapterPosition());
+                clickListener.deleteFile(holder.getBindingAdapterPosition());
             } else if (item.getItemId() == R.id.menuItem_rename) {
-               reNameCallback.reNameFile(holder.getBindingAdapterPosition());
+                clickListener.reNameFile(holder.getBindingAdapterPosition());
             }
             return true;
         });
@@ -205,15 +179,16 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
     }
 
     public interface ItemClickListener {
-        void onItemClick(final int adapterPotion);
+        void onItemClick(final int position, VideoFilesViewHolder viewHolder);
+
+        void longClick(final int position, VideoFilesViewHolder viewHolder);
+
+        void deleteFile(int position);
+
+        void reNameFile(int position);
+
     }
 
-    public interface DeleteFileCallback {
-        void deleteFile(int adaptorPosition);
-    }
-    public interface ReNameCallback{
-        void reNameFile(int adaptorPosition);
-    }
 
     public static class VideoFilesViewHolder extends RecyclerView.ViewHolder {
         LayoutRvFilesBinding binding;

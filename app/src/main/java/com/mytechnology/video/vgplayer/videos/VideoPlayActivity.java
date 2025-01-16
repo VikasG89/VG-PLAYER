@@ -52,6 +52,9 @@ import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RenderersFactory;
+import androidx.media3.exoplayer.mediacodec.MediaCodecInfo;
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
+import androidx.media3.exoplayer.mediacodec.MediaCodecUtil;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.extractor.flac.FlacExtractor;
@@ -69,12 +72,16 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.FFmpegOnlyRenderersFactory;
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory;
 
 
 @UnstableApi
@@ -584,14 +591,16 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     @OptIn(markerClass = UnstableApi.class)
     private void initializeExoPlayer() {
-        RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true)
-                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
+        RenderersFactory renderersFactory = new FFmpegOnlyRenderersFactory(this);
+        /*RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true)
+                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);*/
         DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
                 .setMp3ExtractorFlags(Mp3Extractor.FLAG_ENABLE_INDEX_SEEKING)
                 .setFlacExtractorFlags(FlacExtractor.FLAG_DISABLE_ID3_METADATA);
         DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(this)
                 .setDataSourceFactory(new DefaultDataSource.Factory(this));
-        player = new ExoPlayer.Builder(this, renderersFactory)
+        player = new ExoPlayer.Builder(this/*, renderersFactory*/)
+                .setRenderersFactory(renderersFactory)
                 .setMediaSourceFactory(new DefaultMediaSourceFactory(this, extractorsFactory))
                 .setMediaSourceFactory(mediaSourceFactory)
                 .setHandleAudioBecomingNoisy(true)

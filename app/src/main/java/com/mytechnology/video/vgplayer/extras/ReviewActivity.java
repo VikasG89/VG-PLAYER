@@ -29,11 +29,6 @@ public class ReviewActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-       /* SharedPreferences preferences = getSharedPreferences("Change Theme", MODE_PRIVATE);
-        changeTheme = preferences.getBoolean("Theme Changed", false);
-        if (changeTheme) {
-            setTheme(R.style.My_AppTheme_NoActionBar);
-        }*/
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_review);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {

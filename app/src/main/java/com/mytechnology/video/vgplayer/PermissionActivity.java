@@ -32,7 +32,6 @@ public class PermissionActivity extends AppCompatActivity {
         insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         insetsController.hide(WindowInsetsCompat.Type.systemBars());
 
-
         if (Build.VERSION.SDK_INT >= 33) {
             PERMISSIONS_STORAGE = new String[]{"android.permission.READ_MEDIA_VIDEO"};
         } else {

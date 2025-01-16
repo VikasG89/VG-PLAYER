@@ -92,6 +92,5 @@ public class AppSettings extends AppCompatActivity {
             }
         });
 
-
     }
 }

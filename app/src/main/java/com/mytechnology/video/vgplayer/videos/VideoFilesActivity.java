@@ -4,6 +4,7 @@ import static android.content.ContentValues.TAG;
 import static com.mytechnology.video.vgplayer.utility.CommonFunctions.getVideosWithSort;
 import static com.mytechnology.video.vgplayer.videos.VideoPlayActivity.MY_SHARED_PREFS_VIDEO;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -13,9 +14,13 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -43,13 +48,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.mytechnology.video.vgplayer.MainActivity;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoFilesBinding;
+import com.mytechnology.video.vgplayer.utility.ShareHelper;
 import com.mytechnology.video.vgplayer.utility.SwipeToShareCallback;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Objects;
 
-public class VideoFilesActivity extends AppCompatActivity implements VideoFilesAdapter.ItemClickListener, VideoFilesAdapter.DeleteFileCallback, VideoFilesAdapter.ReNameCallback {
+public class VideoFilesActivity extends AppCompatActivity implements VideoFilesAdapter.ItemClickListener {
     public static ArrayList<VideoModel> videoModels;
     VideoFilesAdapter adapter;
     ActivityVideoFilesBinding binding;
@@ -58,6 +65,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     private final Object lock = new Object();
     private static final int STORAGE_PERMISSION_CODE = 321;
     boolean permissionGrantForSdk33;
+    ActionMode actionMode = null;
 
     static {
         VideoFilesActivity.videoModels = new ArrayList<>();
@@ -81,8 +89,9 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
 
         videoModels = getVideosWithSort(getApplicationContext(), myVFolder);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new VideoFilesAdapter(this, VideoFilesActivity.videoModels, this, this, this);
+        adapter = new VideoFilesAdapter(this, VideoFilesActivity.videoModels, this);
         recyclerView.setAdapter(adapter);
+
         OnBackPressedDispatcher dispatcher = getOnBackPressedDispatcher();
         dispatcher.addCallback(new OnBackPressedCallback(true) {
             @Override
@@ -97,6 +106,79 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToShareCallback(VideoFilesActivity.this, lock));
         itemTouchHelper.attachToRecyclerView(recyclerView);
     }
+
+    private final ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            MenuInflater menuInflater = mode.getMenuInflater();
+            menuInflater.inflate(R.menu.multi_select_item_menu, menu);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            mode.getMenu().clear();
+            MenuInflater menuInflater = mode.getMenuInflater();
+            menuInflater.inflate(R.menu.multi_select_item_menu, menu);
+            setActionModeTitle(mode);
+            return true;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            if (item.getItemId() == R.id.multi_menu_share) {
+                Toast.makeText(VideoFilesActivity.this, "Share Pressed", Toast.LENGTH_SHORT).show();
+                ArrayList<String> filePaths = new ArrayList<>();
+                for (VideoModel videoModel : adapter.selectedVideoModels) {
+                    filePaths.add(videoModel.getPath());
+                }
+                ShareHelper shareHelper = new ShareHelper(VideoFilesActivity.this);
+                shareHelper.shareMultiVideos(filePaths);
+
+
+            } else if (item.getItemId() == R.id.multi_menu_delete) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(VideoFilesActivity.this);
+                builder.setTitle("Delete Video?")
+                        .setIcon(R.drawable.delete_forever_icon)
+                        .setMessage(adapter.selectedVideoModels.size() + " Video Selected!\n\n" +"Are you sure delete theses videos?") // need to correct sentence when single video is selected
+                        .setPositiveButton("Yes", (dialog, id) -> {
+                            permissionGrantForSdk33 = checkStoragePermissions();
+                            if (!permissionGrantForSdk33) {
+                                requestForStoragePermissions();
+                            } else {
+                                for (int i = 0; i < adapter.selectedVideoModels.size(); i++) {
+                                    File file = new File(adapter.selectedVideoModels.get(i).getPath());
+                                    boolean deleted = file.delete();
+                                    if (deleted) {
+                                        // File deleted successfully
+                                        Toast.makeText(VideoFilesActivity.this, "Video Deleted Successfully", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        // File deletion failed
+                                        Toast.makeText(VideoFilesActivity.this, "Error Deleting File!\n Please try again!!", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                                mode.finish();
+                                recreate();
+                            }
+                        })
+                        .setNegativeButton("No", (dialog, id) -> {
+                            // User cancelled the deletion
+                            dialog.dismiss();
+                        });
+                builder.show();
+            }
+            return true;
+        }
+
+        @SuppressLint("NotifyDataSetChanged")
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            adapter.multiSelection = false;
+            adapter.selectedVideoModels.clear();
+            adapter.notifyDataSetChanged();
+            actionMode = null;
+        }
+    };
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -147,20 +229,63 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         return super.onOptionsItemSelected(item);
     }
 
+    public void setActionModeTitle(ActionMode actionMode){
+        TextView title = new TextView(VideoFilesActivity.this);
+        title.setTextSize(20);
+        title.setPadding(10, 10,10, 10);
+        title.setText(String.format(Locale.getDefault(), "%d Video Selected", adapter.selectedVideoModels.size()));
+        actionMode.setCustomView(title);
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
     @OptIn(markerClass = UnstableApi.class)
     @Override
-    public void onItemClick(int adapterPotion) {
-        Intent intent = new Intent(this, VideoPlayActivity.class);
-        intent.putExtra("position", adapterPotion);
-        intent.putExtra("Parcelable", videoModels);
-        intent.putExtra("Folder Name", myVFolder);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
+    public void onItemClick(int position, VideoFilesAdapter.VideoFilesViewHolder viewHolder) {
+        if (adapter.multiSelection) {
+            if (adapter.selectedVideoModels.contains(videoModels.get(position))) {
+                adapter.selectedVideoModels.remove(videoModels.get(position));
+                viewHolder.checkBox.setChecked(false);
+            } else {
+                adapter.selectedVideoModels.add(videoModels.get(position));
+                viewHolder.checkBox.setChecked(true);
+            }
+            Log.d(TAG, "onBindViewHolder: " + adapter.selectedVideoModels.size());
+            actionMode.invalidate();
+            adapter.notifyItemChanged(position);
+            adapter.notifyDataSetChanged();
+        } else {
+            Intent intent = new Intent(this, VideoPlayActivity.class);
+            intent.putExtra("position", position);
+            intent.putExtra("Parcelable", videoModels);
+            intent.putExtra("Folder Name", myVFolder);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    @Override
+    public void longClick(int position, VideoFilesAdapter.VideoFilesViewHolder viewHolder) {
+        actionMode = startActionMode(actionModeCallback);
+        adapter.multiSelection = true;
+        viewHolder.checkBox.setVisibility(View.VISIBLE);
+        viewHolder.filesMenu.setVisibility(View.GONE);
+        if (adapter.selectedVideoModels.contains(videoModels.get(position))) {
+            adapter.selectedVideoModels.remove(videoModels.get(position));
+            viewHolder.checkBox.setChecked(false);
+        } else {
+            adapter.selectedVideoModels.add(videoModels.get(position));
+            viewHolder.checkBox.setChecked(true);
+        }
+        actionMode.invalidate();
+        Log.d(TAG, "onBindViewHolder: " + adapter.selectedVideoModels.size());
+        adapter.notifyItemChanged(position);
+        adapter.notifyDataSetChanged();
     }
 
     @Override
-    public void deleteFile(int adaptorPosition) {
+    public void deleteFile(int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Delete Video?")
                 .setIcon(R.drawable.delete_forever_icon)
@@ -170,13 +295,13 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     if (!permissionGrantForSdk33) {
                         requestForStoragePermissions();
                     } else {
-                        File file = new File(videoModels.get(adaptorPosition).getPath());
+                        File file = new File(videoModels.get(position).getPath());
                         boolean deleted = file.delete();
                         if (deleted) {
                             // File deleted successfully
-                            videoModels.remove(adaptorPosition);
-                            adapter.notifyItemRemoved(adaptorPosition);
-                            adapter.notifyItemRangeChanged(adaptorPosition, videoModels.size());
+                            videoModels.remove(position);
+                            adapter.notifyItemRemoved(position);
+                            adapter.notifyItemRangeChanged(position, videoModels.size());
                         } else {
                             // File deletion failed
                             Toast.makeText(this, "Error Deleting File!\n Please try again!!", Toast.LENGTH_SHORT).show();
@@ -192,7 +317,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
 
     @OptIn(markerClass = UnstableApi.class)
     @Override
-    public void reNameFile(int adaptorPosition) {
+    public void reNameFile(int position) {
         permissionGrantForSdk33 = checkStoragePermissions();
         if (!permissionGrantForSdk33) {
             requestForStoragePermissions();
@@ -202,7 +327,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     .setIcon(R.drawable.rename_icon)
                     .setMessage("Are you sure you want to rename this video?");
             EditText edtRename = new EditText(this);
-            File file = new File(videoModels.get(adaptorPosition).getPath());
+            File file = new File(videoModels.get(position).getPath());
             String fileName = file.getName();
             edtRename.setText(fileName);
             builder.setView(edtRename);
@@ -212,8 +337,8 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                 boolean isRenamed = file.renameTo(new File(file.getParentFile(), newFileName));
                 if (isRenamed) {
                     SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
-                    preferences.edit().remove(videoModels.get(adaptorPosition).getPath()).apply();
-                    adapter.notifyItemChanged(adaptorPosition);
+                    preferences.edit().remove(videoModels.get(position).getPath()).apply();
+                    adapter.notifyItemChanged(position);
                     recreate();
                 } else {
                     Toast.makeText(this, "Error Renaming File! Please try again!!", Toast.LENGTH_SHORT).show();
@@ -268,4 +393,6 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     }
                 }
             });
+
+
 }

@@ -9,6 +9,7 @@ import android.net.Uri;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class ShareHelper {
     private final Context context;
@@ -26,5 +27,26 @@ public class ShareHelper {
         intent.setClipData(clipData);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         ((Activity) context).startActivityForResult(intent, 222333);
+    }
+
+    public void shareMultiVideos(ArrayList<String> filePaths) {
+        ArrayList<Uri> uris = new ArrayList<>();
+        for (String filePath : filePaths) {
+            File file = new File(filePath);
+            Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", file);
+            uris.add(uri);
+        }
+        /*ClipData clipData = ClipData.newUri(context.getContentResolver(), "Video", uris.get(0));
+        Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+        intent.setType("video/*");
+        intent.setClipData(clipData);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        ((Activity) context).startActivityForResult(intent, 2);*/
+
+        Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+        intent.setType("video/*");
+        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        context.startActivity(Intent.createChooser(intent, "Share videos"));
     }
 }
