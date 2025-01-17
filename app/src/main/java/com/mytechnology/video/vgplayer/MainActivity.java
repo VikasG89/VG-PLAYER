@@ -120,17 +120,16 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
 
                 @Override
                 public boolean onMenuItemActionCollapse(@NonNull MenuItem item) {
-                    finish();
-                    startActivity(new Intent(MainActivity.this, MainActivity.class));
+                    recreate();
                     return true;
                 }
             });
-
 
         } else if (item.getItemId() == R.id.mainMenu_setting) {
             Intent intent = new Intent(this, AppSettings.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+
         } else if (item.getItemId() == R.id.mainMenu_share) {
             Toast.makeText(this, "Share App Link pressed", Toast.LENGTH_SHORT).show();
             /*
@@ -142,6 +141,7 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
             Intent intent = new Intent(this, ReviewActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+
         } else if (item.getItemId() == R.id.mainMenu_about) {
             Toast.makeText(this, "About pressed", Toast.LENGTH_SHORT).show();
             /*

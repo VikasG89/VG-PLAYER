@@ -31,6 +31,8 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.OnBackPressedDispatcher;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
@@ -49,12 +51,8 @@ import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DefaultDataSource;
-import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RenderersFactory;
-import androidx.media3.exoplayer.mediacodec.MediaCodecInfo;
-import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
-import androidx.media3.exoplayer.mediacodec.MediaCodecUtil;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.extractor.flac.FlacExtractor;
@@ -72,15 +70,11 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
 
-import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.FFmpegOnlyRenderersFactory;
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory;
 
 
@@ -107,7 +101,7 @@ public class VideoPlayActivity extends AppCompatActivity {
     boolean isScreenLocked = false;
 
     // Audio Focus Variables
-    androidx.media3.common.AudioAttributes playbackAttributes;
+    AudioAttributes playbackAttributes;
 
 
     public static boolean isVideoPlaying = false;
@@ -135,6 +129,10 @@ public class VideoPlayActivity extends AppCompatActivity {
     private ImageView playPauseDoubleTap;
     int doubleTapCountLeft = 0;
     int doubleTapCountRight = 0;
+
+    private long lastTouchTime = 0;
+    private static final long DOUBLE_TAP_THRESHOLD = 1000; // threshold in milliseconds
+
 
     public VideoPlayActivity() {
         //this.mediaSourceList = new ArrayList<>();
@@ -193,6 +191,16 @@ public class VideoPlayActivity extends AppCompatActivity {
         videoFilesAdapterPosition = getIntent().getIntExtra("position", 0);
         mVideoModelArrayList = getIntent().getParcelableArrayListExtra("Parcelable");
         myVFolder = getIntent().getStringExtra("Folder Name");
+
+        // Activity Result Launcher for Request Write Settings Permission
+        final ActivityResultLauncher<Intent> settingsLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
+            if (Settings.System.canWrite(VideoPlayActivity.this)) {
+                //Write Settings Permissions Granted
+                Log.d(TAG, "onActivityResult: Write Settings Permissions Granted");
+            } else {
+                Toast.makeText(VideoPlayActivity.this, "Write Settings Permissions Denied", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         // Initialize ExoPlayer
         initializeExoPlayer();
@@ -323,10 +331,11 @@ public class VideoPlayActivity extends AppCompatActivity {
                                     hideControllerSwipe();
                                 }
                             } else {
-                                // Request permission to change brightness
+                                // Request permission to change brightness and volume
                                 Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
                                 intent.setData(Uri.parse("package:" + getPackageName()));
-                                startActivityForResult(intent, 6547);
+                                // Launch the permission request
+                                settingsLauncher.launch(intent);
                             }
                         }
                     } catch (Exception e) {
@@ -340,11 +349,15 @@ public class VideoPlayActivity extends AppCompatActivity {
             public void onDoubleTouch(MotionEvent e) {
                 super.onDoubleTouch(e);
                 setFullScreen(true);
+
                 boolean left = e.getX() < (float) mainLayout.getWidth() / 3;
                 boolean right = e.getX() > ((float) mainLayout.getWidth() / 3) * 2;
                 boolean center = e.getX() > (float) mainLayout.getWidth() / 3 && e.getX() < ((float) mainLayout.getWidth() / 3) * 2;
+
                 if (!isScreenLocked) {
+                    timeBar.setMax((int) player.getDuration());
                     if (left) {
+                        calculateTimeBetweenTwoDoubleClick();
                         // Left half - For rewind on Double Tap
                         doubleTapCountRight = 0;
                         doubleTapCountLeft++;
@@ -359,18 +372,24 @@ public class VideoPlayActivity extends AppCompatActivity {
                         txtFastForwardBackward.setText(String.format(Locale.getDefault(), "-%d", increment));
                         timeBar.setProgress(increment);
                     } else if (right) {
+                        calculateTimeBetweenTwoDoubleClick();
                         // Right half - For Fast Forward on Double Tap
                         doubleTapCountLeft = 0;
                         doubleTapCountRight++;
                         forWard_10Sec();
                         lockScreen.setVisibility(View.GONE);
-                        int increment = 0;
+                        int increment;
                         if (player.getCurrentPosition() != timeBar.getMax()) {
                             increment = doubleTapCountRight * 10;
+                            txtFastForwardBackward.setText(String.format(Locale.getDefault(), "+%d", increment));
+                            timeBar.setProgress(increment);
+                        } else if (player.getCurrentPosition() == timeBar.getMax()) {
+                            increment = 0;
+                            txtFastForwardBackward.setText(String.format(Locale.getDefault(), "+%d", increment));
+                            timeBar.setProgress(increment);
                         }
                         txtFastForwardBackward.setVisibility(View.VISIBLE);
-                        txtFastForwardBackward.setText(String.format(Locale.getDefault(), "+%d", increment));
-                        timeBar.setProgress(increment);
+
                     } else if (center) {
                         if (player.isPlaying()) {
                             pauseVideo();
@@ -508,7 +527,7 @@ public class VideoPlayActivity extends AppCompatActivity {
                     editor.commit();
                     // If video previously played then show snack bar
                     if (preferences.contains(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath())) {
-                        Snackbar.make(mainLayout, "Play from Start!", 4000)
+                        Snackbar.make(mainLayout, "Play from Start!", Snackbar.LENGTH_SHORT)
                                 .setAction("Yes", v -> {
                                     player.seekTo(0);
                                     playVideo();
@@ -569,16 +588,13 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     }
 
-    private void resetDoubleTap() {
-        TimerTask timerTask = new TimerTask() {
-            @Override
-            public void run() {
-                doubleTapCountLeft = 0;
-                doubleTapCountRight = 0;
-            }
-        };
-        Timer timer = new Timer();
-        timer.schedule(timerTask, 1000);
+    private void calculateTimeBetweenTwoDoubleClick() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastTouchTime > DOUBLE_TAP_THRESHOLD) {
+            doubleTapCountLeft = 0;
+            doubleTapCountRight = 0;
+        }
+        lastTouchTime = currentTime;
     }
 
     @OptIn(markerClass = UnstableApi.class)
@@ -591,7 +607,8 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     @OptIn(markerClass = UnstableApi.class)
     private void initializeExoPlayer() {
-        RenderersFactory renderersFactory = new FFmpegOnlyRenderersFactory(this);
+        RenderersFactory renderersFactory = new NextRenderersFactory(this);
+
         /*RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true)
                 .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);*/
         DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
@@ -625,7 +642,7 @@ public class VideoPlayActivity extends AppCompatActivity {
             long position1 = preferences.getLong(mVideoModelArrayList.get(currentPosition).getPath(), 0);
             if (position1 != player.getDuration()) {
                 player.seekTo(currentPosition, position1);
-                Snackbar.make(mainLayout, "Play from Start!", 3000)
+                Snackbar.make(mainLayout, "Play from Start!", Snackbar.LENGTH_SHORT)
                         .setAction("Yes", v -> {
                             player.seekTo(0);
                             playVideo();
@@ -757,7 +774,8 @@ public class VideoPlayActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data, @NonNull ComponentCaller caller) {
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data,
+                                 @NonNull ComponentCaller caller) {
         super.onActivityResult(requestCode, resultCode, data, caller);
         if (requestCode == 6547 && resultCode == RESULT_OK) {
             value = Settings.System.canWrite(getApplicationContext());

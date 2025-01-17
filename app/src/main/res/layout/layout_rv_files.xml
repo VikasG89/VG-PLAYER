@@ -7,7 +7,7 @@
     android:layout_height="wrap_content"
     android:layout_margin="@dimen/dp_4"
     app:cardCornerRadius="@dimen/dp_5"
-    app:cardElevation="@dimen/dp_4">
+    app:cardElevation="@dimen/dp_5">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout2"
@@ -94,9 +94,11 @@
 
         <LinearLayout
             android:id="@+id/layout_menu"
-            android:layout_width="@dimen/dp_30"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center"
+            android:layout_marginStart="@dimen/dp_10"
+            android:layout_marginEnd="@dimen/dp_10"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/files_layout_row"
@@ -105,16 +107,18 @@
 
             <CheckBox
                 android:id="@+id/checkBox"
-                android:layout_width="@dimen/dp_35"
-                android:layout_height="@dimen/dp_35"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="false"
                 android:visibility="gone"/>
 
             <ImageButton
                 android:id="@+id/files_menu_item"
-                android:layout_width="@dimen/dp_7"
-                android:layout_height="@dimen/dp_40"
-                android:layout_gravity="center"
+                android:layout_width="@dimen/dp_13"
+                android:layout_height="@dimen/dp_45"
+                android:layout_gravity="top"
                 android:visibility="visible"
+                android:padding="@dimen/dp_20"
                 android:background="@drawable/menu_icon"
                 android:contentDescription="@string/image_description"
                 tools:ignore="TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />

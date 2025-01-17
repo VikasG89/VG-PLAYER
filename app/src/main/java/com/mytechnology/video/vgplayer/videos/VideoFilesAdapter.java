@@ -10,20 +10,19 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.MediaMetadataRetriever;
 import android.text.format.Formatter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.view.ActionMode;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.media3.common.util.UnstableApi;
 import androidx.recyclerview.widget.RecyclerView;
@@ -79,7 +78,6 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
             viewHolder.checkBox.setVisibility(View.VISIBLE);
             viewHolder.filesMenu.setVisibility(View.GONE);
             viewHolder.checkBox.setChecked(selectedVideoModels.contains(videoModels.get(position)));
-
         } else {
             viewHolder.checkBox.setVisibility(View.GONE);
             viewHolder.filesMenu.setVisibility(View.VISIBLE);
@@ -90,20 +88,19 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
                 if (selectedVideoModels.contains(videoModels.get(position))) {
                     selectedVideoModels.remove(videoModels.get(position));
                     viewHolder.checkBox.setChecked(false);
-                    Log.d(TAG, "onBindViewHolder: " + selectedVideoModels.size());
                 } else {
                     selectedVideoModels.add(videoModels.get(position));
                     viewHolder.checkBox.setChecked(true);
-                    Log.d(TAG, "onBindViewHolder: " + selectedVideoModels.size());
                 }
+                VideoFilesActivity.actionMode.setTitle(selectedVideoModels.size() + " Video Selected");
             } else {
                 clickListener.onItemClick(position, viewHolder);
             }
-           notifyDataSetChanged();
-
+            notifyItemChanged(position);
+            notifyDataSetChanged();
         });
 
-        viewHolder.filesMenuItem.setOnClickListener((View v) -> setUpMenuButton(v, viewHolder));
+        viewHolder.filesMenu.setOnClickListener((View v) -> setUpMenuButton(v, viewHolder));
 
         viewHolder.layout.setOnLongClickListener(v -> {
             clickListener.longClick(position, viewHolder);
@@ -189,14 +186,12 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
 
     }
 
-
     public static class VideoFilesViewHolder extends RecyclerView.ViewHolder {
         LayoutRvFilesBinding binding;
         TextView fileName;
         ConstraintLayout layout;
         ImageView thumbnail;
         TextView duration, isNewVideoAvailable;
-        LinearLayout filesMenuItem;
         ImageView filesMenu;
         CheckBox checkBox;
 
@@ -209,7 +204,6 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
             layout = binding.filesLayoutRow;
             duration = binding.duration;
             isNewVideoAvailable = binding.textViewNew;
-            filesMenuItem = binding.layoutMenu;
             filesMenu = binding.filesMenuItem;
             checkBox = binding.checkBox;
         }
