@@ -1,6 +1,7 @@
 package com.mytechnology.video.vgplayer;
 
 import static android.content.ContentValues.TAG;
+import static com.mytechnology.video.vgplayer.utility.CommonFunctions.STORAGE_PERMISSION_CODE;
 import static com.mytechnology.video.vgplayer.utility.CommonFunctions.checkStoragePermissions;
 import static com.mytechnology.video.vgplayer.utility.CommonFunctions.getVideos;
 import static com.mytechnology.video.vgplayer.utility.CommonFunctions.requestForStoragePermissions;
@@ -10,6 +11,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -54,9 +56,9 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
 
     RecyclerView recyclerView;
     ArrayList<VideoModel> videoArrayList = new ArrayList<>();
-    boolean permissionGrantForSdk33;
     RecyclerView videoFilesRV;
     MainActivityAdapter videoFilesAdapter;
+    private ActivityResultLauncher<Intent> storageActivityResultLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +81,19 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
         (recyclerView = inflate.videoFolderRV).setLayoutManager(new LinearLayoutManager(this));
         final VideoFolderAdapter videoFolderAdapter = new VideoFolderAdapter(this, videoFolderList);
         recyclerView.setAdapter(videoFolderAdapter);
+
+        storageActivityResultLauncher =
+                registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        //Android is 11 (R) or above
+                        if (Environment.isExternalStorageManager()) {
+                            //Manage External Storage Permissions Granted
+                            Log.d(TAG, "onActivityResult: Manage External Storage Permissions Granted");
+                        } else {
+                            Toast.makeText(MainActivity.this, "Storage Permissions Denied", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
     }
 
     @Override
@@ -214,9 +229,8 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
                 .setIcon(R.drawable.delete_forever_icon)
                 .setMessage("Are you sure you want to delete this video?")
                 .setPositiveButton("Yes", (dialog, id) -> {
-                    permissionGrantForSdk33 = checkStoragePermissions(MainActivity.this);
-                    if (!permissionGrantForSdk33) {
-                        requestForStoragePermissions(MainActivity.this, storageActivityResultLauncher);
+                    if (!checkStoragePermissions(this)) {
+                        requestForStoragePermissions(this, storageActivityResultLauncher);
                     } else {
                         File file = new File(videoArrayList.get(position).getPath());
                         boolean deleted = file.delete();
@@ -241,9 +255,8 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
     @OptIn(markerClass = UnstableApi.class)
     @Override
     public void reNameFile(int position) {
-        permissionGrantForSdk33 = checkStoragePermissions(MainActivity.this);
-        if (!permissionGrantForSdk33) {
-            requestForStoragePermissions(MainActivity.this, storageActivityResultLauncher);
+        if (!checkStoragePermissions(this)) {
+            requestForStoragePermissions(this, storageActivityResultLauncher);
         } else {
             androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
             builder.setTitle("Rename Video?")
@@ -272,16 +285,25 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
         }
     }
 
-    private final ActivityResultLauncher<Intent> storageActivityResultLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    //Android is 11 (R) or above
-                    if (Environment.isExternalStorageManager()) {
-                        //Manage External Storage Permissions Granted
-                        Log.d(TAG, "onActivityResult: Manage External Storage Permissions Granted");
-                    } else {
-                        Toast.makeText(MainActivity.this, "Storage Permissions Denied", Toast.LENGTH_SHORT).show();
-                    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.length > 0) {
+                //check each permission if granted or not
+                boolean write = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                if (write) {
+                    //External Storage permissions granted
+                    Log.d(TAG, "onRequestPermissionsResult: External Storage permissions granted");
+                    Toast.makeText(this, "External Storage permissions granted", Toast.LENGTH_SHORT).show();
+                } else {
+                    //External Storage permission denied
+                    Log.d(TAG, "onRequestPermissionsResult: External Storage permission denied");
+                    Toast.makeText(this, "External Storage permission denied", Toast.LENGTH_SHORT).show();
                 }
-            });
+            }
+        }
+
+    }
+
 }

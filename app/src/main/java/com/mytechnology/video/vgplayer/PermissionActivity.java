@@ -55,13 +55,19 @@ public class PermissionActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1) {
             if (grantResults.length > 0) {
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                //check each permission if granted or not
+                boolean write = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                if (write) {
+                    //External Storage permissions granted
                     permission = PackageManager.PERMISSION_GRANTED;
                     startActivity(intent);
                     finish();
+                } else {
+                    //External Storage permission denied
+                    Toast.makeText(this, "External Storage permission denied", Toast.LENGTH_SHORT).show();
                 }
-
             }
+
         } else {
             Toast.makeText(this, "Permissions Denied!!\nAll Permissions Are Required", Toast.LENGTH_LONG).show();
             getPermission();

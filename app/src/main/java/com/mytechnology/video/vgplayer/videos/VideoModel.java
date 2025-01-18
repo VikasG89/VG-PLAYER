@@ -28,7 +28,7 @@ public class VideoModel implements Parcelable {
         size = in.readInt();
     }
 
-    public static final Creator<VideoModel> CREATOR = new Creator<VideoModel>() {
+    public static final Creator<VideoModel> CREATOR = new Creator<>() {
         @Override
         public VideoModel createFromParcel(Parcel in) {
             return new VideoModel(in);
@@ -39,10 +39,6 @@ public class VideoModel implements Parcelable {
             return new VideoModel[size];
         }
     };
-
-    public String getDateAdded() {
-        return dateAdded;
-    }
 
     public int getDuration() {
         return duration;

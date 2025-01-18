@@ -16,7 +16,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
@@ -72,7 +71,7 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
             viewHolder.isNewVideoAvailable.setVisibility(View.VISIBLE);
         }
         viewHolder.layout.setOnClickListener(v -> clickListener.onItemClick(viewHolder.getAbsoluteAdapterPosition(), viewHolder));
-        viewHolder.filesMenuItem.setOnClickListener(v -> setUpMenuButton(v, viewHolder));
+        viewHolder.filesMenu.setOnClickListener(v -> setUpMenuButton(v, viewHolder));
 
     }
 
@@ -156,7 +155,6 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
         ConstraintLayout layout;
         ImageView thumbnail;
         TextView duration, isNewVideoAvailable;
-        LinearLayout filesMenuItem;
         ImageView filesMenu;
         CheckBox checkBox;
 
@@ -169,7 +167,6 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
             layout = binding.filesLayoutRow;
             duration = binding.duration;
             isNewVideoAvailable = binding.textViewNew;
-            filesMenuItem = binding.layoutMenu;
             filesMenu = binding.filesMenuItem;
             checkBox = binding.checkBox;
         }

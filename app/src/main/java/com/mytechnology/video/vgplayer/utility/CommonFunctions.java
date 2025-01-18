@@ -2,6 +2,7 @@ package com.mytechnology.video.vgplayer.utility;
 
 import static android.content.Context.MODE_PRIVATE;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -25,6 +26,7 @@ import java.util.Locale;
 public class CommonFunctions {
 
     public static final int STORAGE_PERMISSION_CODE = 321;
+
     public static String ConvertSecondToHHMMSSString(int nSecondTime) {
         int nSecond = nSecondTime / 1000;
         int hrs = nSecond / 3600;
@@ -46,7 +48,7 @@ public class CommonFunctions {
             uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
         }
         final Cursor query;
-        if (folderName != null){
+        if (folderName != null) {
             folderName = "%" + folderName + "%";
             query = context.getContentResolver().query(uri, new String[]{"_data", "_display_name", "date_added", "duration", "_size"},
                     "_data like?", new String[]{folderName}, null);
@@ -125,7 +127,7 @@ public class CommonFunctions {
             return Environment.isExternalStorageManager();
         } else {
             //Below android 11
-            int write = ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            int write = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE);
             return write == PackageManager.PERMISSION_GRANTED;
         }
     }
@@ -144,11 +146,9 @@ public class CommonFunctions {
                 intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
                 storageActivityResultLauncher.launch(intent);
             }
-        } else {
-            //Below android 11
-            ActivityCompat.requestPermissions((Activity) context, new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE,}, STORAGE_PERMISSION_CODE);
+        } else  {
+            ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
         }
-
     }
 
 }

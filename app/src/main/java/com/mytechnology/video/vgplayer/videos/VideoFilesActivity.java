@@ -1,18 +1,19 @@
 package com.mytechnology.video.vgplayer.videos;
 
 import static android.content.ContentValues.TAG;
+import static com.mytechnology.video.vgplayer.utility.CommonFunctions.STORAGE_PERMISSION_CODE;
+import static com.mytechnology.video.vgplayer.utility.CommonFunctions.checkStoragePermissions;
 import static com.mytechnology.video.vgplayer.utility.CommonFunctions.getVideosWithSort;
+import static com.mytechnology.video.vgplayer.utility.CommonFunctions.requestForStoragePermissions;
 import static com.mytechnology.video.vgplayer.videos.VideoPlayActivity.MY_SHARED_PREFS_VIDEO;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -34,8 +35,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
 import androidx.appcompat.widget.SearchView;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -56,15 +55,13 @@ import java.util.Objects;
 
 public class VideoFilesActivity extends AppCompatActivity implements VideoFilesAdapter.ItemClickListener {
     public static ArrayList<VideoModel> videoModels;
-    VideoFilesAdapter adapter;
-    ActivityVideoFilesBinding binding;
-    String myVFolder;
-    RecyclerView recyclerView;
+    private VideoFilesAdapter adapter;
+    protected ActivityVideoFilesBinding binding;
+    private String myVFolder;
     private final Object lock = new Object();
-    private static final int STORAGE_PERMISSION_CODE = 321;
-    boolean permissionGrantForSdk33;
     static ActionMode actionMode = null;
-    ActionMode.Callback actionModeCallback;
+    private ActionMode.Callback actionModeCallback;
+    private ActivityResultLauncher<Intent> storageActivityResultLauncher;
 
     static {
         VideoFilesActivity.videoModels = new ArrayList<>();
@@ -82,7 +79,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        recyclerView = binding.videoFilesRV;
+        RecyclerView recyclerView = binding.videoFilesRV;
         myVFolder = getIntent().getStringExtra("Folder Name");
         ((ActionBar) Objects.requireNonNull((Object) getSupportActionBar())).setTitle(myVFolder);
 
@@ -140,9 +137,8 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                             .setIcon(R.drawable.delete_forever_icon)
                             .setMessage(massage)
                             .setPositiveButton("Yes", (dialog, id) -> {
-                                permissionGrantForSdk33 = checkStoragePermissions();
-                                if (!permissionGrantForSdk33) {
-                                    requestForStoragePermissions();
+                                if (!checkStoragePermissions(VideoFilesActivity.this)) {
+                                    requestForStoragePermissions(VideoFilesActivity.this, storageActivityResultLauncher);
                                 } else {
                                     for (int i = 0; i < adapter.selectedVideoModels.size(); i++) {
                                         File file = new File(adapter.selectedVideoModels.get(i).getPath());
@@ -176,6 +172,19 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                 actionMode = null;
             }
         };
+
+        storageActivityResultLauncher =
+                registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        //Android is 11 (R) or above
+                        if (Environment.isExternalStorageManager()) {
+                            //Manage External Storage Permissions Granted
+                            Log.d(TAG, "onActivityResult: Manage External Storage Permissions Granted");
+                        } else {
+                            Toast.makeText(VideoFilesActivity.this, "Storage Permissions Denied", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
 
 
     }
@@ -257,6 +266,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         adapter.notifyItemChanged(position);
         adapter.notifyDataSetChanged();
     }
+
     @OptIn(markerClass = UnstableApi.class)
     @Override
     public void onItemClick(int position, VideoFilesAdapter.VideoFilesViewHolder viewHolder) {
@@ -276,9 +286,8 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                 .setIcon(R.drawable.delete_forever_icon)
                 .setMessage("Are you sure you want to delete this video?")
                 .setPositiveButton("Yes", (dialog, id) -> {
-                    permissionGrantForSdk33 = checkStoragePermissions();
-                    if (!permissionGrantForSdk33) {
-                        requestForStoragePermissions();
+                    if (!checkStoragePermissions(this)) {
+                        requestForStoragePermissions(this, storageActivityResultLauncher);
                     } else {
                         File file = new File(videoModels.get(position).getPath());
                         boolean deleted = file.delete();
@@ -300,12 +309,12 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         builder.show();
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     @OptIn(markerClass = UnstableApi.class)
     @Override
     public void reNameFile(int position) {
-        permissionGrantForSdk33 = checkStoragePermissions();
-        if (!permissionGrantForSdk33) {
-            requestForStoragePermissions();
+        if (!checkStoragePermissions(this)) {
+            requestForStoragePermissions(this, storageActivityResultLauncher);
         } else {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Rename Video?")
@@ -319,65 +328,72 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             edtRename.requestFocus();
             builder.setPositiveButton("Yes", (dialog, id) -> {
                 String newFileName = edtRename.getText().toString();
-                boolean isRenamed = file.renameTo(new File(file.getParentFile(), newFileName));
-                if (isRenamed) {
-                    SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
-                    preferences.edit().remove(videoModels.get(position).getPath()).apply();
-                    adapter.notifyItemChanged(position);
-                    recreate();
+                if (!newFileName.isEmpty()) {
+                    File newFile = new File(file.getParent(), newFileName);
+                    try {
+                        Log.d("FileRename", "Attempting to rename file from: " + file.getAbsolutePath() + " to: " + newFile.getAbsolutePath());
+                        boolean isRenamed = file.renameTo(newFile);
+                        if (isRenamed) {
+                            Log.d("FileRename", "File renamed successfully");
+                            SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
+                            preferences.edit().remove(videoModels.get(position).getPath()).apply();
+                            adapter.notifyItemChanged(position);
+                            adapter.notifyDataSetChanged();
+                            recreate();
+                        } else {
+                            Log.d("FileRename", "File rename failed");
+                            Toast.makeText(this, "Error Renaming File! Please try again!!", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        Log.d("FileRename", "Exception occurred: " + e.getMessage());
+                        Toast.makeText(this, "Exception occurred: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 } else {
-                    Toast.makeText(this, "Error Renaming File! Please try again!!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Filename cannot be empty!", Toast.LENGTH_SHORT).show();
                 }
+                /*if (!newFileName.isEmpty()) {
+                    File newFile = new File(file.getParent(), newFileName);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        renameFileUsingMediaStore(file, newFile, position);
+                    } else {
+                        boolean isRenamed = file.renameTo(newFile);
+                        if (isRenamed) {
+                            SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
+                            preferences.edit().remove(videoModels.get(position).getPath()).apply();
+                            adapter.notifyItemChanged(position);
+                            recreate();
+                        } else {
+                            Toast.makeText(this, "Error Renaming File! Please try again!!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                } else {
+                    Toast.makeText(this, "Filename cannot be empty!", Toast.LENGTH_SHORT).show();
+                }*/
             });
             builder.setNegativeButton("No", (dialog, id) -> dialog.dismiss());
             builder.show();
         }
     }
 
-    public boolean checkStoragePermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            //Android is 11 (R) or above
-            return Environment.isExternalStorageManager();
-        } else {
-            //Below android 11
-            int write = ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            return write == PackageManager.PERMISSION_GRANTED;
-        }
-    }
-
-    private void requestForStoragePermissions() {
-        //Android is 11 (R) or above
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            try {
-                Intent intent = new Intent();
-                intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                Uri uri = Uri.fromParts("package", this.getPackageName(), null);
-                intent.setData(uri);
-                storageActivityResultLauncher.launch(intent);
-            } catch (Exception e) {
-                Intent intent = new Intent();
-                intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-                storageActivityResultLauncher.launch(intent);
-            }
-        } else {
-            //Below android 11
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE,}, STORAGE_PERMISSION_CODE);
-        }
-
-    }
-
-    private final ActivityResultLauncher<Intent> storageActivityResultLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    //Android is 11 (R) or above
-                    if (Environment.isExternalStorageManager()) {
-                        //Manage External Storage Permissions Granted
-                        Log.d(TAG, "onActivityResult: Manage External Storage Permissions Granted");
-                    } else {
-                        Toast.makeText(VideoFilesActivity.this, "Storage Permissions Denied", Toast.LENGTH_SHORT).show();
-                    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.length > 0) {
+                //check each permission if granted or not
+                boolean write = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                if (write) {
+                    //External Storage permissions granted
+                    Log.d(TAG, "onRequestPermissionsResult: External Storage permissions granted");
+                    Toast.makeText(this, "External Storage permissions granted", Toast.LENGTH_SHORT).show();
+                } else {
+                    //External Storage permission denied
+                    Log.d(TAG, "onRequestPermissionsResult: External Storage permission denied");
+                    Toast.makeText(this, "External Storage permission denied", Toast.LENGTH_SHORT).show();
                 }
-            });
+            }
+        }
 
+    }
 
 }
