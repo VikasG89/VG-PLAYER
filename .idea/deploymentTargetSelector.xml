@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-01-18T20:45:41.845415400Z">
+        <DropdownSelection timestamp="2025-01-21T18:03:49.265912900Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\gurav\.android\avd\Pixel_Fold_API_35.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\gurav\.android\avd\Pixel_7_API_28.avd" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,12 +15,12 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\gurav\.android\avd\Pixel_5_API_26_2.avd" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\gurav\.android\avd\Pixel_7_API_28.avd" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\gurav\.android\avd\Pixel_9_Pro_API_29.avd" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\gurav\.android\avd\Pixel_9_API_Baklava.avd" />
               </handle>
             </Target>
           </targets>

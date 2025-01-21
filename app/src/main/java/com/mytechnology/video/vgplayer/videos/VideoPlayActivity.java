@@ -13,7 +13,6 @@ import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.format.Formatter;
@@ -51,6 +50,7 @@ import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RenderersFactory;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
@@ -74,8 +74,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-
-import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory;
 
 
 @UnstableApi
@@ -607,17 +605,14 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     @OptIn(markerClass = UnstableApi.class)
     private void initializeExoPlayer() {
-        RenderersFactory renderersFactory = new NextRenderersFactory(this);
-
-        /*RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true)
-                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);*/
+        RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true)
+                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
         DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
                 .setMp3ExtractorFlags(Mp3Extractor.FLAG_ENABLE_INDEX_SEEKING)
                 .setFlacExtractorFlags(FlacExtractor.FLAG_DISABLE_ID3_METADATA);
         DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(this)
                 .setDataSourceFactory(new DefaultDataSource.Factory(this));
-        player = new ExoPlayer.Builder(this/*, renderersFactory*/)
-                .setRenderersFactory(renderersFactory)
+        player = new ExoPlayer.Builder(this, renderersFactory)
                 .setMediaSourceFactory(new DefaultMediaSourceFactory(this, extractorsFactory))
                 .setMediaSourceFactory(mediaSourceFactory)
                 .setHandleAudioBecomingNoisy(true)
@@ -718,21 +713,12 @@ public class VideoPlayActivity extends AppCompatActivity {
     }
 
     private void setFullScreen(boolean isFullScreen) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(this.getWindow(), this.getWindow().getDecorView());
-            insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-            if (isFullScreen) {
-                insetsController.hide(WindowInsetsCompat.Type.systemBars());
-            } else {
-                insetsController.show(WindowInsetsCompat.Type.systemBars());
-            }
+        WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(this.getWindow(), this.getWindow().getDecorView());
+        insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        if (isFullScreen) {
+            insetsController.hide(WindowInsetsCompat.Type.systemBars());
         } else {
-            if (isFullScreen) {
-                getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                        WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            } else {
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            }
+            insetsController.show(WindowInsetsCompat.Type.systemBars());
         }
     }
 

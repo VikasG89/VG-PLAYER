@@ -42,7 +42,7 @@ public class CommonFunctions {
     public static ArrayList<VideoModel> getVideos(final Context context, String folderName) {
         final ArrayList<VideoModel> list = new ArrayList<>();
         Uri uri;
-        if (Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             uri = MediaStore.Video.Media.getContentUri("external");
         } else {
             uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
@@ -78,7 +78,7 @@ public class CommonFunctions {
     public static ArrayList<VideoModel> getVideosWithSort(final Context context, String folderName) {
         final ArrayList<VideoModel> list = new ArrayList<>();
         Uri uri;
-        if (Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             uri = MediaStore.Video.Media.getContentUri("external");
         } else {
             uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
@@ -127,8 +127,7 @@ public class CommonFunctions {
             return Environment.isExternalStorageManager();
         } else {
             //Below android 11
-            int write = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            return write == PackageManager.PERMISSION_GRANTED;
+            return ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         }
     }
 
@@ -146,8 +145,6 @@ public class CommonFunctions {
                 intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
                 storageActivityResultLauncher.launch(intent);
             }
-        } else  {
-            ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
         }
     }
 

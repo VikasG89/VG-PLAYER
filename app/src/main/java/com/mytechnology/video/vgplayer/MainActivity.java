@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
     RecyclerView videoFilesRV;
     MainActivityAdapter videoFilesAdapter;
     private ActivityResultLauncher<Intent> storageActivityResultLauncher;
+    private boolean permissionGranted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -255,8 +256,9 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
     @OptIn(markerClass = UnstableApi.class)
     @Override
     public void reNameFile(int position) {
-        if (!checkStoragePermissions(this)) {
-            requestForStoragePermissions(this, storageActivityResultLauncher);
+        permissionGranted = checkStoragePermissions(MainActivity.this);
+        if (!permissionGranted) {
+            requestForStoragePermissions(MainActivity.this, storageActivityResultLauncher);
         } else {
             androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
             builder.setTitle("Rename Video?")
@@ -291,17 +293,16 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
         if (requestCode == STORAGE_PERMISSION_CODE) {
             if (grantResults.length > 0) {
                 //check each permission if granted or not
-                boolean write = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                if (write) {
-                    //External Storage permissions granted
-                    Log.d(TAG, "onRequestPermissionsResult: External Storage permissions granted");
-                    Toast.makeText(this, "External Storage permissions granted", Toast.LENGTH_SHORT).show();
-                } else {
-                    //External Storage permission denied
-                    Log.d(TAG, "onRequestPermissionsResult: External Storage permission denied");
-                    Toast.makeText(this, "External Storage permission denied", Toast.LENGTH_SHORT).show();
-                }
+                permissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                //External Storage permissions granted
+                Log.d(TAG, "onRequestPermissionsResult: External Storage permissions granted");
+                Toast.makeText(this, "External Storage permissions granted", Toast.LENGTH_SHORT).show();
+            } else {
+                //External Storage permission denied
+                Log.d(TAG, "onRequestPermissionsResult: External Storage permission denied");
+                Toast.makeText(this, "External Storage permission denied", Toast.LENGTH_SHORT).show();
             }
+
         }
 
     }

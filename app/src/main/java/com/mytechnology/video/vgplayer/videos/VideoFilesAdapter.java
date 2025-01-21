@@ -9,6 +9,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.MediaMetadataRetriever;
+import android.os.Build;
 import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -22,7 +23,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.view.ActionMode;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.media3.common.util.UnstableApi;
 import androidx.recyclerview.widget.RecyclerView;
@@ -41,7 +41,6 @@ import java.util.Date;
 import java.util.Locale;
 
 public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.VideoFilesViewHolder> {
-    private static final String TAG = VideoFilesAdapter.class.getSimpleName();
     Context context;
     ArrayList<VideoModel> videoModels;
     private final ItemClickListener clickListener;
@@ -100,7 +99,7 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
             notifyDataSetChanged();
         });
 
-        viewHolder.filesMenu.setOnClickListener((View v) -> setUpMenuButton(v, viewHolder));
+        viewHolder.filesMenu.setOnClickListener((View v) -> setUpMenuButton(v, viewHolder, position));
 
         viewHolder.layout.setOnLongClickListener(v -> {
             clickListener.longClick(position, viewHolder);
@@ -113,16 +112,20 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
         return videoModels.size();
     }
 
-    private void setUpMenuButton(View view, VideoFilesViewHolder holder) {
+    private void setUpMenuButton(View view, VideoFilesViewHolder holder, int position) {
         PopupMenu popupMenu = new PopupMenu(context, view);
         MenuInflater inflater = popupMenu.getMenuInflater();
         inflater.inflate(R.menu.files_menu, popupMenu.getMenu());
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            popupMenu.getMenu().findItem(R.id.menuItem_delete).setVisible(false);
+            popupMenu.getMenu().findItem(R.id.menuItem_rename).setVisible(false);
+        }
         popupMenu.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.menuItem_play) {
                 holder.layout.performClick();
             } else if (item.getItemId() == R.id.menuItem_share) {
                 ShareHelper shareHelper = new ShareHelper(context);
-                shareHelper.shareVideo(videoModels.get(holder.getBindingAdapterPosition()).getPath());
+                shareHelper.shareVideo(videoModels.get(position).getPath());
             } else if (item.getItemId() == R.id.menuItem_details) {
                 AlertDialog dialog = new Builder(context).create();
                 dialog.setIcon(R.drawable.propertise_info);
@@ -130,30 +133,30 @@ public class VideoFilesAdapter extends RecyclerView.Adapter<VideoFilesAdapter.Vi
                 String height;
                 String width;
                 try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
-                    retriever.setDataSource(videoModels.get(holder.getBindingAdapterPosition()).getPath());
+                    retriever.setDataSource(videoModels.get(position).getPath());
                     height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
                     width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                File file = new File(videoModels.get(holder.getBindingAdapterPosition()).getPath());
+                File file = new File(videoModels.get(position).getPath());
                 // Get last modified date
                 long lastModified = file.lastModified();
                 //Format the date and time
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
                 String formattedDate = sdf.format(new Date(lastModified));
-                dialog.setMessage("Name:  " + videoModels.get(holder.getBindingAdapterPosition()).getName() + "\n\n"
-                        + "Video Location:  " + videoModels.get(holder.getBindingAdapterPosition()).getPath() + "\n\n"
+                dialog.setMessage("Name:  " + videoModels.get(position).getName() + "\n\n"
+                        + "Video Location:  " + videoModels.get(position).getPath() + "\n\n"
                         + "Resolution:  " + width + " X " + height + "\n\n"
-                        + "Size:  " + Formatter.formatFileSize(context, videoModels.get(holder.getBindingAdapterPosition()).getSize()) + "\n\n"
-                        + "Duration:  " + ConvertSecondToHHMMSSString(videoModels.get(holder.getBindingAdapterPosition()).getDuration()) + "\n\n"
+                        + "Size:  " + Formatter.formatFileSize(context, videoModels.get(position).getSize()) + "\n\n"
+                        + "Duration:  " + ConvertSecondToHHMMSSString(videoModels.get(position).getDuration()) + "\n\n"
                         + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" + formattedDate + "\n\n");
                 dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, which) -> dialog1.dismiss());
                 dialog.show();
             } else if (item.getItemId() == R.id.menuItem_delete) {
-                clickListener.deleteFile(holder.getBindingAdapterPosition());
+                clickListener.deleteFile(position);
             } else if (item.getItemId() == R.id.menuItem_rename) {
-                clickListener.reNameFile(holder.getBindingAdapterPosition());
+                clickListener.reNameFile(position);
             }
             return true;
         });

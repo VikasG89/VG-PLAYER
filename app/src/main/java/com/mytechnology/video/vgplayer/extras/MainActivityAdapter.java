@@ -9,6 +9,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.MediaMetadataRetriever;
+import android.os.Build;
 import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -83,6 +84,10 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
         PopupMenu popupMenu = new PopupMenu(context, view);
         MenuInflater inflater = popupMenu.getMenuInflater();
         inflater.inflate(R.menu.files_menu, popupMenu.getMenu());
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            popupMenu.getMenu().findItem(R.id.menuItem_delete).setVisible(false);
+            popupMenu.getMenu().findItem(R.id.menuItem_rename).setVisible(false);
+        }
         popupMenu.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.menuItem_play) {
                 holder.layout.performClick();

@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -62,6 +63,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     static ActionMode actionMode = null;
     private ActionMode.Callback actionModeCallback;
     private ActivityResultLauncher<Intent> storageActivityResultLauncher;
+    private boolean permissionGranted = false;
 
     static {
         VideoFilesActivity.videoModels = new ArrayList<>();
@@ -107,6 +109,11 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             public boolean onCreateActionMode(ActionMode mode, Menu menu) {
                 MenuInflater menuInflater = mode.getMenuInflater();
                 menuInflater.inflate(R.menu.multi_select_item_menu, menu);
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+                    if (menu.findItem(R.id.multi_menu_delete) != null) {
+                        menu.findItem(R.id.multi_menu_delete).setVisible(true);
+                    }
+                }
                 return true;
             }
 
@@ -313,8 +320,9 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     @OptIn(markerClass = UnstableApi.class)
     @Override
     public void reNameFile(int position) {
-        if (!checkStoragePermissions(this)) {
-            requestForStoragePermissions(this, storageActivityResultLauncher);
+        permissionGranted = checkStoragePermissions(VideoFilesActivity.this);
+        if (!permissionGranted) {
+            requestForStoragePermissions(VideoFilesActivity.this, storageActivityResultLauncher);
         } else {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Rename Video?")
@@ -332,13 +340,13 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     File newFile = new File(file.getParent(), newFileName);
                     try {
                         Log.d("FileRename", "Attempting to rename file from: " + file.getAbsolutePath() + " to: " + newFile.getAbsolutePath());
-                        boolean isRenamed = file.renameTo(newFile);
+                        boolean isRenamed = file.renameTo(newFile.getAbsoluteFile());
                         if (isRenamed) {
                             Log.d("FileRename", "File renamed successfully");
                             SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
                             preferences.edit().remove(videoModels.get(position).getPath()).apply();
-                            adapter.notifyItemChanged(position);
                             adapter.notifyDataSetChanged();
+                            SystemClock.sleep(200);
                             recreate();
                         } else {
                             Log.d("FileRename", "File rename failed");
@@ -351,24 +359,6 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                 } else {
                     Toast.makeText(this, "Filename cannot be empty!", Toast.LENGTH_SHORT).show();
                 }
-                /*if (!newFileName.isEmpty()) {
-                    File newFile = new File(file.getParent(), newFileName);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        renameFileUsingMediaStore(file, newFile, position);
-                    } else {
-                        boolean isRenamed = file.renameTo(newFile);
-                        if (isRenamed) {
-                            SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
-                            preferences.edit().remove(videoModels.get(position).getPath()).apply();
-                            adapter.notifyItemChanged(position);
-                            recreate();
-                        } else {
-                            Toast.makeText(this, "Error Renaming File! Please try again!!", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                } else {
-                    Toast.makeText(this, "Filename cannot be empty!", Toast.LENGTH_SHORT).show();
-                }*/
             });
             builder.setNegativeButton("No", (dialog, id) -> dialog.dismiss());
             builder.show();
@@ -381,19 +371,16 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         if (requestCode == STORAGE_PERMISSION_CODE) {
             if (grantResults.length > 0) {
                 //check each permission if granted or not
-                boolean write = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                if (write) {
-                    //External Storage permissions granted
-                    Log.d(TAG, "onRequestPermissionsResult: External Storage permissions granted");
-                    Toast.makeText(this, "External Storage permissions granted", Toast.LENGTH_SHORT).show();
-                } else {
-                    //External Storage permission denied
-                    Log.d(TAG, "onRequestPermissionsResult: External Storage permission denied");
-                    Toast.makeText(this, "External Storage permission denied", Toast.LENGTH_SHORT).show();
-                }
+                permissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                //External Storage permissions granted
+                Log.d(TAG, "onRequestPermissionsResult: External Storage permissions granted");
+                Toast.makeText(this, "External Storage permissions granted", Toast.LENGTH_SHORT).show();
+            } else {
+                //External Storage permission denied
+                Log.d(TAG, "onRequestPermissionsResult: External Storage permission denied");
+                Toast.makeText(this, "External Storage permission denied", Toast.LENGTH_SHORT).show();
             }
         }
-
     }
 
 }
