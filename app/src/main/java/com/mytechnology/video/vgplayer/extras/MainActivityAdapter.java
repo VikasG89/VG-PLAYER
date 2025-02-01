@@ -55,12 +55,10 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
         this.videoModelFull = new ArrayList<>(videoModels);
     }
 
-
     @NonNull
     public FilesViewHolder onCreateViewHolder(final ViewGroup viewGroup, final int n) {
         return new FilesViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.layout_rv_files, viewGroup, false));
     }
-
 
     @OptIn(markerClass = UnstableApi.class)
     public void onBindViewHolder(final FilesViewHolder viewHolder, final int position) {
@@ -84,10 +82,6 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
         PopupMenu popupMenu = new PopupMenu(context, view);
         MenuInflater inflater = popupMenu.getMenuInflater();
         inflater.inflate(R.menu.files_menu, popupMenu.getMenu());
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
-            popupMenu.getMenu().findItem(R.id.menuItem_delete).setVisible(false);
-            popupMenu.getMenu().findItem(R.id.menuItem_rename).setVisible(false);
-        }
         popupMenu.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.menuItem_play) {
                 holder.layout.performClick();

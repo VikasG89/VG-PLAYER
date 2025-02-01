@@ -5,13 +5,13 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".videos.VideoFilesActivity">
+    android:background="@color/music_player_background"
+    tools:context=".videos.VideoPlayActivity">
 
     <androidx.media3.ui.PlayerView
         android:id="@+id/videoView"
         android:layout_width="0.0dp"
         android:layout_height="0.0dp"
-        android:background="@color/music_player_background"
         android:keepScreenOn="true"
         android:soundEffectsEnabled="true"
         app:bar_gravity="center"
@@ -47,7 +47,7 @@
         app:layout_constraintHorizontal_bias="0.037"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.3"
+        app:layout_constraintVertical_bias="0.4"
         app:srcCompat="@drawable/lock_open" />
 
     <include layout="@layout/layout_swap_gesture" />

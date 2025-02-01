@@ -47,6 +47,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.mytechnology.video.vgplayer.MainActivity;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoFilesBinding;
+import com.mytechnology.video.vgplayer.utility.FileUpdater;
 import com.mytechnology.video.vgplayer.utility.ShareHelper;
 import com.mytechnology.video.vgplayer.utility.SwipeToShareCallback;
 
@@ -293,11 +294,11 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                 .setIcon(R.drawable.delete_forever_icon)
                 .setMessage("Are you sure you want to delete this video?")
                 .setPositiveButton("Yes", (dialog, id) -> {
-                    if (!checkStoragePermissions(this)) {
-                        requestForStoragePermissions(this, storageActivityResultLauncher);
+                    permissionGranted = checkStoragePermissions(VideoFilesActivity.this);
+                    if (!permissionGranted) {
+                        requestForStoragePermissions(VideoFilesActivity.this, storageActivityResultLauncher);
                     } else {
-                        File file = new File(videoModels.get(position).getPath());
-                        boolean deleted = file.delete();
+                        boolean deleted = FileUpdater.deleteVideoFile(this, videoModels.get(position).getPath());
                         if (deleted) {
                             // File deleted successfully
                             videoModels.remove(position);
@@ -331,33 +332,29 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             EditText edtRename = new EditText(this);
             File file = new File(videoModels.get(position).getPath());
             String fileName = file.getName();
-            edtRename.setText(fileName);
+            String title = fileName.substring(0, fileName.lastIndexOf("."));
+            String extension = fileName.substring(fileName.lastIndexOf("."));
+            edtRename.setText(title);
             builder.setView(edtRename);
             edtRename.requestFocus();
             builder.setPositiveButton("Yes", (dialog, id) -> {
-                String newFileName = edtRename.getText().toString();
-                if (!newFileName.isEmpty()) {
-                    File newFile = new File(file.getParent(), newFileName);
-                    try {
-                        Log.d("FileRename", "Attempting to rename file from: " + file.getAbsolutePath() + " to: " + newFile.getAbsolutePath());
-                        boolean isRenamed = file.renameTo(newFile.getAbsoluteFile());
-                        if (isRenamed) {
-                            Log.d("FileRename", "File renamed successfully");
-                            SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
-                            preferences.edit().remove(videoModels.get(position).getPath()).apply();
-                            adapter.notifyDataSetChanged();
-                            SystemClock.sleep(200);
-                            recreate();
-                        } else {
-                            Log.d("FileRename", "File rename failed");
-                            Toast.makeText(this, "Error Renaming File! Please try again!!", Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (Exception e) {
-                        Log.d("FileRename", "Exception occurred: " + e.getMessage());
-                        Toast.makeText(this, "Exception occurred: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                String newFileName = edtRename.getText().toString() + extension;
+                try {
+                    boolean isRenamed = FileUpdater.renameFile(this, file.getAbsolutePath(), newFileName);
+                    if (isRenamed) {
+                        Log.d("FileRename", "File renamed successfully");
+                        SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
+                        preferences.edit().remove(videoModels.get(position).getPath()).apply();
+                        adapter.notifyDataSetChanged();
+                        SystemClock.sleep(200);
+                        startActivity(getIntent());
+                    } else {
+                        Log.d("FileRename", "File rename failed");
+                        Toast.makeText(this, "Error Renaming File! Please try again!!", Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    Toast.makeText(this, "Filename cannot be empty!", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Log.d("FileRename", "Exception occurred: " + e.getMessage());
+                    Toast.makeText(this, "Exception occurred: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
             builder.setNegativeButton("No", (dialog, id) -> dialog.dismiss());

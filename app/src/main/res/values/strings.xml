@@ -44,4 +44,7 @@
     <string name="light_theme">Light</string>
     <string name="choose_theme">Choose Theme -</string>
     <string name="playing_2x_speed">Playing 2x Speed</string>
+    <string name="rotate_screen">Rotate</string>
+    <string name="repeat">Repeat</string>
+    <string name="shuffle">Shuffle</string>
 </resources>

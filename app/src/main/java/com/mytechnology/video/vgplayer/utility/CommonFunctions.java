@@ -132,8 +132,10 @@ public class CommonFunctions {
     }
 
     public static void requestForStoragePermissions(Context context, ActivityResultLauncher<Intent> storageActivityResultLauncher) {
-        //Android is 11 (R) or above
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        //Android is 10 (Q) or below
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+        } else {
             try {
                 Intent intent = new Intent();
                 intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
@@ -147,5 +149,6 @@ public class CommonFunctions {
             }
         }
     }
+
 
 }

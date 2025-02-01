@@ -13,6 +13,7 @@ import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.format.Formatter;
@@ -21,8 +22,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,6 +38,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
@@ -89,7 +91,7 @@ public class VideoPlayActivity extends AppCompatActivity {
     private ExoPlayer player;
     private ConstraintLayout mainLayout;
     protected ImageView previous, next, backWard, forward, playPause, lockScreen, extraMenu, screenRotation, extraControls;
-    LinearLayout extraControlsLayout;
+    HorizontalScrollView extraControlsLayout;
     private TextView trackName;
     int videoFilesAdapterPosition;
     static String myVFolder;
@@ -140,7 +142,13 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     @OptIn(markerClass = UnstableApi.class)
     protected void onCreate(final Bundle bundle) {
+
         super.onCreate(bundle);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            setTheme(R.style.VideoPlayerTheme); // Set the dark theme for this activity
+        }
         EdgeToEdge.enable(this);
         binding = ActivityVideoPlayBinding.inflate(getLayoutInflater());
         final ConstraintLayout root = binding.getRoot();
@@ -212,6 +220,36 @@ public class VideoPlayActivity extends AppCompatActivity {
             } else if (visibility == View.VISIBLE) {
                 setFullScreen(false);
                 lockScreen.setVisibility(View.VISIBLE);
+            }
+        });
+
+        playPauseDoubleTap.setOnClickListener(v -> {
+            if (!isScreenLocked) {
+                if (player.isPlaying()) {
+                    pauseVideo();
+                    playPauseDoubleTap.setImageResource(R.drawable.play);
+                } else {
+                    playVideo();
+                    playPauseDoubleTap.setImageResource(R.drawable.pause);
+                }
+            } else {
+                Snackbar.make(playerView, "Screen is locked! \n You want to Unlock and play/pause the video?", Snackbar.LENGTH_LONG)
+                        .setAction("OK", v1 -> {
+                            isScreenLocked = !isScreenLocked;
+                            if (isScreenLocked) {
+                                lockScreen.setImageResource(R.drawable.lock);
+                            } else {
+                                lockScreen.setImageResource(R.drawable.lock_open);
+                            }
+                            if (player.isPlaying()) {
+                                pauseVideo();
+                                playPauseDoubleTap.setImageResource(R.drawable.play);
+                            } else {
+                                playVideo();
+                                playPauseDoubleTap.setImageResource(R.drawable.pause);
+                            }
+
+                        }).show();
             }
         });
 
@@ -446,8 +484,10 @@ public class VideoPlayActivity extends AppCompatActivity {
         playPause.setOnClickListener(v -> {
             if (player.isPlaying()) {
                 pauseVideo();
+                playPauseDoubleTap.setImageResource(R.drawable.play);
             } else {
                 playVideo();
+                playPauseDoubleTap.setImageResource(R.drawable.pause);
             }
         });
 

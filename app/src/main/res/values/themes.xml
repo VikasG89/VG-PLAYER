@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="VGPlayer" parent="Theme.Material3.DayNight">
+    <style name="VGPlayer" parent="Theme.Material3.DynamicColors.DayNight">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/purple_500</item>
         <item name="actionBarSize">@dimen/dp_30</item>
@@ -15,10 +15,9 @@
         <!-- Customize your theme here. -->
     </style>
 
-    <style name="SplashScreen" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="SplashScreen" parent="Theme.Material3.DynamicColors.DayNight.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/purple_500</item>
-        <item name="actionBarSize">@dimen/dp_30</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
@@ -28,11 +27,11 @@
         <!-- Status bar color. -->
         <item name="android:windowIsTranslucent">true</item>
     </style>
-<style name="VideoPlayerTheme" parent="Theme.Material3.DayNight.NoActionBar">
-    <!-- Primary brand color. -->
-    <item name="colorPrimary">@color/white</item>
 
-</style>
+
+    <style name="VideoPlayerTheme" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Primary brand color. -->
+    </style>
 
 
 </resources>

@@ -45,6 +45,7 @@ import com.mytechnology.video.vgplayer.databinding.ActivityMainBinding;
 import com.mytechnology.video.vgplayer.extras.AppSettings;
 import com.mytechnology.video.vgplayer.extras.MainActivityAdapter;
 import com.mytechnology.video.vgplayer.extras.ReviewActivity;
+import com.mytechnology.video.vgplayer.utility.FileUpdater;
 import com.mytechnology.video.vgplayer.videos.VideoFolderAdapter;
 import com.mytechnology.video.vgplayer.videos.VideoModel;
 import com.mytechnology.video.vgplayer.videos.VideoPlayActivity;
@@ -174,14 +175,16 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
     private ArrayList<String> getVideoFolder(final Context context) {
         final ArrayList<String> list = new ArrayList<>();
         Uri uri;
-        if (Build.VERSION.SDK_INT >= 29) {
-            uri = MediaStore.Video.Media.getContentUri("external");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            uri = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
         } else {
             uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
         }
-        final Cursor query = context.getContentResolver().query(uri, new String[]{"_data"}, null, null, "title");
+        final Cursor query = context.getContentResolver()
+                .query(uri, new String[]{MediaStore.Video.Media.DATA},
+                        null, null, "title");
         if (query != null) {
-            final int columnIndexOrThrow = query.getColumnIndexOrThrow("_data");
+            final int columnIndexOrThrow = query.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
             while (query.moveToNext()) {
                 final String string = query.getString(columnIndexOrThrow);
                 final int lastIndex = string.lastIndexOf("/");
@@ -230,11 +233,11 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
                 .setIcon(R.drawable.delete_forever_icon)
                 .setMessage("Are you sure you want to delete this video?")
                 .setPositiveButton("Yes", (dialog, id) -> {
-                    if (!checkStoragePermissions(this)) {
-                        requestForStoragePermissions(this, storageActivityResultLauncher);
+                    permissionGranted = checkStoragePermissions(MainActivity.this);
+                    if (!permissionGranted) {
+                        requestForStoragePermissions(MainActivity.this, storageActivityResultLauncher);
                     } else {
-                        File file = new File(videoArrayList.get(position).getPath());
-                        boolean deleted = file.delete();
+                        boolean deleted = FileUpdater.deleteVideoFile(this, videoArrayList.get(position).getPath());
                         if (deleted) {
                             // File deleted successfully
                             videoArrayList.remove(position);
@@ -256,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
     @OptIn(markerClass = UnstableApi.class)
     @Override
     public void reNameFile(int position) {
-        permissionGranted = checkStoragePermissions(MainActivity.this);
+        permissionGranted = checkStoragePermissions(getApplicationContext());
         if (!permissionGranted) {
             requestForStoragePermissions(MainActivity.this, storageActivityResultLauncher);
         } else {
@@ -267,12 +270,14 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
             EditText edtRename = new EditText(this);
             File file = new File(videoArrayList.get(position).getPath());
             String fileName = file.getName();
-            edtRename.setText(fileName);
+            String title = fileName.substring(0, fileName.lastIndexOf("."));
+            String extension = fileName.substring(fileName.lastIndexOf("."));
+            edtRename.setText(title);
             builder.setView(edtRename);
             edtRename.requestFocus();
             builder.setPositiveButton("Yes", (dialog, id) -> {
-                String newFileName = edtRename.getText().toString();
-                boolean isRenamed = file.renameTo(new File(file.getParentFile(), newFileName));
+                String newFileName = edtRename.getText().toString() + extension;
+                boolean isRenamed = FileUpdater.renameFile(this, file.getAbsolutePath(), newFileName);
                 if (isRenamed) {
                     SharedPreferences preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
                     preferences.edit().remove(videoArrayList.get(position).getPath()).apply();

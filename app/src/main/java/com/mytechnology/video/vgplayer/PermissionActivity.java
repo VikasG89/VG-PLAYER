@@ -36,7 +36,7 @@ public class PermissionActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             PERMISSIONS_STORAGE = new String[]{Manifest.permission.READ_MEDIA_VIDEO};
         } else {
-            PERMISSIONS_STORAGE = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
+            PERMISSIONS_STORAGE = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE};
         }
         intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
