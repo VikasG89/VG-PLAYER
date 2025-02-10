@@ -28,7 +28,7 @@ public class VideoModel implements Parcelable {
         size = in.readInt();
     }
 
-    public static final Creator<VideoModel> CREATOR = new Creator<>() {
+    public static final Creator<VideoModel> CREATOR = new Creator<VideoModel>() {
         @Override
         public VideoModel createFromParcel(Parcel in) {
             return new VideoModel(in);

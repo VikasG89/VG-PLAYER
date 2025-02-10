@@ -41,23 +41,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/paths" />
         </provider>
-
-        <activity
-            android:name=".MediaPlayer"
-            android:configChanges="orientation|screenSize|smallestScreenSize|navigation|locale|layoutDirection|screenLayout|uiMode|density|fontScale|colorMode"
-            android:exported="true"
-            android:screenOrientation="sensor"
-            android:theme="@style/SplashScreen"
-            tools:ignore="DiscouragedApi">
-            <intent-filter tools:ignore="AppLinkUrlError">
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <data android:mimeType="video/*" />
-                <data android:mimeType="audio/*" />
-            </intent-filter>
-        </activity>
+        
         <activity
             android:name=".PermissionActivity"
             android:exported="true"
@@ -73,11 +57,20 @@
             android:exported="false" />
         <activity
             android:name=".videos.VideoPlayActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|navigation|locale|layoutDirection|screenLayout|uiMode|density|fontScale|colorMode"
-            android:exported="false"
+            android:configChanges="orientation|screenSize|smallestScreenSize|navigation|locale|layoutDirection|screenLayout|density|fontScale"
+            android:exported="true"
             android:screenOrientation="sensor"
             android:theme="@style/VideoPlayerTheme"
-            tools:ignore="DiscouragedApi" />
+            tools:ignore="DiscouragedApi">
+            <intent-filter tools:ignore="AppLinkUrlError">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="video/*" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".videos.VideoFilesActivity"
             android:exported="false" />

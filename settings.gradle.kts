@@ -25,3 +25,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "VG Player"
 include(":app")
+
+

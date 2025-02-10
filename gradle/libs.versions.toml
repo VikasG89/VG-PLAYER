@@ -9,6 +9,7 @@ activity = "1.10.0"
 constraintlayout = "2.2.0"
 glide = "4.16.0"
 media3Exoplayer = "1.5.1"
+
 ossLicensesPlugin = "0.10.6"
 playServicesOssLicenses = "17.1.0"
 

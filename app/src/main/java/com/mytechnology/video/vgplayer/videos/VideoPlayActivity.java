@@ -12,8 +12,8 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
+import android.media.browse.MediaBrowser;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.format.Formatter;
@@ -38,7 +38,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
@@ -132,6 +131,8 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     private long lastTouchTime = 0;
     private static final long DOUBLE_TAP_THRESHOLD = 1000; // threshold in milliseconds
+    private boolean externalIntent;
+    Uri externalVideoUri;
 
 
     public VideoPlayActivity() {
@@ -142,13 +143,14 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     @OptIn(markerClass = UnstableApi.class)
     protected void onCreate(final Bundle bundle) {
-
         super.onCreate(bundle);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            UiModeManager uiModeManager = (UiModeManager) getSystemService(UI_MODE_SERVICE);
+            uiModeManager.setNightMode(UiModeManager.MODE_NIGHT_YES);
+            //AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_UNSPECIFIED);
         } else {
             setTheme(R.style.VideoPlayerTheme); // Set the dark theme for this activity
-        }
+        }*/
         EdgeToEdge.enable(this);
         binding = ActivityVideoPlayBinding.inflate(getLayoutInflater());
         final ConstraintLayout root = binding.getRoot();
@@ -192,14 +194,33 @@ public class VideoPlayActivity extends AppCompatActivity {
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         playbackAttributes = new AudioAttributes.Builder().build();
+        // Initialize ExoPlayer
+        initializeExoPlayer();
 
-        // Getting Intent Data
-        videoFilesAdapterPosition = getIntent().getIntExtra("position", 0);
-        mVideoModelArrayList = getIntent().getParcelableArrayListExtra("Parcelable");
-        myVFolder = getIntent().getStringExtra("Folder Name");
+        // Getting Intent from another App for Playing Video
+        final Intent intent = getIntent();
+        final String action = intent.getAction();
+        final String type = intent.getType();
+        if ("android.intent.action.VIEW".equals(action) ||
+                (Objects.equals(type, "audio/*") || Objects.equals(type, "video/*"))) {
+            externalIntent = true;
+            externalVideoUri = intent.getData();
+            assert externalVideoUri != null;
+            Log.e("URI", externalVideoUri.toString());
+            playBroadcastAudio(externalVideoUri);
+        } else {
+            // Getting Intent Data
+            externalIntent = false;
+            final Intent intent1 = getIntent();
+            videoFilesAdapterPosition = intent1.getIntExtra("position", 0);
+            mVideoModelArrayList = intent1.getParcelableArrayListExtra("Parcelable");
+            myVFolder = intent1.getStringExtra("Folder Name");
+            playVideo1(videoFilesAdapterPosition);
+        }
 
         // Activity Result Launcher for Request Write Settings Permission
-        final ActivityResultLauncher<Intent> settingsLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
+        final ActivityResultLauncher<Intent> settingsLauncher =
+                registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
             if (Settings.System.canWrite(VideoPlayActivity.this)) {
                 //Write Settings Permissions Granted
                 Log.d(TAG, "onActivityResult: Write Settings Permissions Granted");
@@ -207,9 +228,6 @@ public class VideoPlayActivity extends AppCompatActivity {
                 Toast.makeText(VideoPlayActivity.this, "Write Settings Permissions Denied", Toast.LENGTH_SHORT).show();
             }
         });
-
-        // Initialize ExoPlayer
-        initializeExoPlayer();
 
         // Setting Auto Fullscreen enabled OR disabled
         playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
@@ -555,38 +573,49 @@ public class VideoPlayActivity extends AppCompatActivity {
             popupMenu.show();
         });
 
-        player.addListener(new Player.Listener() {
-            @Override
-            public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
-                Player.Listener.super.onMediaItemTransition(mediaItem, reason);
-                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                    trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
-                    editor.putLong(mVideoModelArrayList.get(player.getCurrentMediaItemIndex() - 1).getPath(), -1);
-                    editor.commit();
-                    // If video previously played then show snack bar
-                    if (preferences.contains(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath())) {
-                        Snackbar.make(mainLayout, "Play from Start!", Snackbar.LENGTH_SHORT)
-                                .setAction("Yes", v -> {
-                                    player.seekTo(0);
-                                    playVideo();
-                                })
-                                .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-                                .show();
+        if (!externalIntent) {
+            player.addListener(new Player.Listener() {
+                @Override
+                public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
+                    Player.Listener.super.onMediaItemTransition(mediaItem, reason);
+                    if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                        trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
+                        editor.putLong(mVideoModelArrayList.get(player.getCurrentMediaItemIndex() - 1).getPath(), -1);
+                        editor.commit();
+                        // If video previously played then show snack bar
+                        if (preferences.contains(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath())) {
+                            Snackbar.make(mainLayout, "Play from Start!", Snackbar.LENGTH_SHORT)
+                                    .setAction("Yes", v -> {
+                                        player.seekTo(0);
+                                        playVideo();
+                                    })
+                                    .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
+                                    .show();
+                        }
+                    } else if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
+                        savePreference(player.getCurrentMediaItemIndex());
+                        finish();
                     }
-                } else if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
-                    savePreference(player.getCurrentMediaItemIndex());
-                    finish();
                 }
-            }
 
-            @Override
-            public void onPlayerError(@NonNull PlaybackException error) {
-                Player.Listener.super.onPlayerError(error);
-                Log.d(TAG, Objects.requireNonNull(error.getMessage()));
-                Toast.makeText(VideoPlayActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
-            }
+                @Override
+                public void onPlayerError(@NonNull PlaybackException error) {
+                    Player.Listener.super.onPlayerError(error);
+                    Log.d(TAG, Objects.requireNonNull(error.getMessage()));
+                    Toast.makeText(VideoPlayActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
+                }
 
-        });
+            });
+        } else {
+            player.addListener(new Player.Listener() {
+                @Override
+                public void onPlayerError(@NonNull PlaybackException error) {
+                    Player.Listener.super.onPlayerError(error);
+                    Log.d(TAG, Objects.requireNonNull(error.getMessage()));
+                    Toast.makeText(VideoPlayActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
+        }
 
         screenRotation.setOnClickListener(v -> changeOrientation());
 
@@ -603,27 +632,52 @@ public class VideoPlayActivity extends AppCompatActivity {
         dispatcher.addCallback(new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (player.isPlaying()) {
+
+                if (externalIntent) {
                     pauseVideo();
-                    savePreference(player.getCurrentPosition());
                     player.stop();
-                }
-                player.release();
-                //mediaSourceList.clear();
-                mediaItemList.clear();
-                Intent intent;
-                if (myVFolder.equals("NO Folder Name")) {
-                    intent = new Intent(VideoPlayActivity.this, MainActivity.class);
+                    player.release();
+                    finish();
                 } else {
-                    intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
-                    intent.putExtra("Folder Name", myVFolder);
+                    if (player.isPlaying()) {
+                        pauseVideo();
+                        savePreference(player.getCurrentPosition());
+                        player.stop();
+                    }
+                    player.release();
+                    //mediaSourceList.clear();
+                    mediaItemList.clear();
+                    Intent intent;
+                    if (myVFolder.equals("NO Folder Name")) {
+                        intent = new Intent(VideoPlayActivity.this, MainActivity.class);
+                    } else {
+                        intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
+                        intent.putExtra("Folder Name", myVFolder);
+                    }
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
                 }
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
+
             }
         });
 
+    }
+
+    private void playBroadcastAudio(Uri uri) {
+        MediaItem mediaItem = null;
+        if (uri != null) {
+            mediaItem = MediaItem.fromUri(uri);
+            trackName.setText(uri.getPath());
+        } else {
+            Log.e("Error External", String.valueOf((Object) null));
+        }
+        assert mediaItem != null;
+        player.setMediaItem(mediaItem);
+        playerView.setPlayer(player);
+        extraMenu.setVisibility(View.GONE);
+        player.prepare();
+        player.setPlayWhenReady(true);
     }
 
     private void calculateTimeBetweenTwoDoubleClick() {
@@ -658,7 +712,9 @@ public class VideoPlayActivity extends AppCompatActivity {
                 .setHandleAudioBecomingNoisy(true)
                 .setAudioAttributes(playbackAttributes, true)
                 .build();
+    }
 
+    private void playVideo1(int currentPosition) {
         for (int i = 0; i < mVideoModelArrayList.size(); ++i) {
            /* MediaSource mediaSource = mediaSourceFactory.createMediaSource(MediaItem.fromUri(Uri.parse(mVideoModelArrayList.get(i).getPath())));
             mediaSourceList.add(mediaSource);*/
@@ -667,11 +723,6 @@ public class VideoPlayActivity extends AppCompatActivity {
         player.setMediaItems(mediaItemList);
         //player.setMediaSources(mediaSourceList);
         playerView.setPlayer(player);
-        // Call Play Video Method
-        playVideo1(videoFilesAdapterPosition);
-    }
-
-    private void playVideo1(int currentPosition) {
         player.prepare();
         if (preferences != null && preferences.contains(mVideoModelArrayList.get(currentPosition).getPath())) {
             long position1 = preferences.getLong(mVideoModelArrayList.get(currentPosition).getPath(), 0);
@@ -690,9 +741,10 @@ public class VideoPlayActivity extends AppCompatActivity {
         } else {
             player.seekTo(currentPosition, 0);
         }
-        player.setPlayWhenReady(true);
         trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
         savePreference(player.getCurrentPosition());
+        player.setPlayWhenReady(true);
+
     }
 
     private void playVideo() {
