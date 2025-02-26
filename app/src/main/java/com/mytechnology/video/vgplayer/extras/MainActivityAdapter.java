@@ -9,7 +9,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.MediaMetadataRetriever;
-import android.os.Build;
 import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -69,7 +68,7 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
         if (preferences != null && !preferences.contains(videoModels.get(position).getPath())) {
             viewHolder.isNewVideoAvailable.setVisibility(View.VISIBLE);
         }
-        viewHolder.layout.setOnClickListener(v -> clickListener.onItemClick(viewHolder.getAbsoluteAdapterPosition(), viewHolder));
+        viewHolder.layout.setOnClickListener(_ -> clickListener.onItemClick(viewHolder.getAbsoluteAdapterPosition(), viewHolder));
         viewHolder.filesMenu.setOnClickListener(v -> setUpMenuButton(v, viewHolder));
 
     }
@@ -113,7 +112,7 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
                         + "Size:  " + Formatter.formatFileSize(context, videoModels.get(holder.getBindingAdapterPosition()).getSize()) + "\n\n"
                         + "Duration:  " + ConvertSecondToHHMMSSString(videoModels.get(holder.getBindingAdapterPosition()).getDuration()) + "\n\n"
                         + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" + formattedDate + "\n\n");
-                dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, which) -> dialog1.dismiss());
+                dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, _) -> dialog1.dismiss());
                 dialog.show();
             } else if (item.getItemId() == R.id.menuItem_delete) {
                 clickListener.deleteFile(holder.getBindingAdapterPosition());

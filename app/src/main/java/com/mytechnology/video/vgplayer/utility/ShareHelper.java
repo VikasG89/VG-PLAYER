@@ -36,13 +36,6 @@ public class ShareHelper {
             Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", file);
             uris.add(uri);
         }
-        /*ClipData clipData = ClipData.newUri(context.getContentResolver(), "Video", uris.get(0));
-        Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-        intent.setType("video/*");
-        intent.setClipData(clipData);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        ((Activity) context).startActivityForResult(intent, 2);*/
-
         Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
         intent.setType("video/*");
         intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);

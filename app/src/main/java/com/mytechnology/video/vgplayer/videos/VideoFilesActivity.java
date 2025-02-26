@@ -66,6 +66,8 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     private ActivityResultLauncher<Intent> storageActivityResultLauncher;
     private boolean permissionGranted = false;
 
+    boolean deleted;
+
     static {
         VideoFilesActivity.videoModels = new ArrayList<>();
     }
@@ -141,6 +143,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     } else {
                         massage = adapter.selectedVideoModels.size() + " Videos Selected.\n\n" + " Are you sure delete these videos?";
                     }
+
                     builder.setTitle("Delete Video?")
                             .setIcon(R.drawable.delete_forever_icon)
                             .setMessage(massage)
@@ -149,16 +152,16 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                                     requestForStoragePermissions(VideoFilesActivity.this, storageActivityResultLauncher);
                                 } else {
                                     for (int i = 0; i < adapter.selectedVideoModels.size(); i++) {
-                                        File file = new File(adapter.selectedVideoModels.get(i).getPath());
-                                        boolean deleted = file.delete();
-                                        if (deleted) {
-                                            // File deleted successfully
-                                            Toast.makeText(VideoFilesActivity.this, "Video Deleted Successfully", Toast.LENGTH_SHORT).show();
-                                        } else {
-                                            // File deletion failed
-                                            Toast.makeText(VideoFilesActivity.this, "Error Deleting File!\n Please try again!!", Toast.LENGTH_SHORT).show();
-                                        }
+                                        deleted = FileUpdater.deleteVideoFile(VideoFilesActivity.this, adapter.selectedVideoModels.get(i).getPath());
                                     }
+                                    if (deleted) {
+                                        // File deleted successfully
+                                        Toast.makeText(VideoFilesActivity.this, "Video Deleted Successfully", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        // File deletion failed
+                                        Toast.makeText(VideoFilesActivity.this, "Error Deleting File!\n Please try again!!", Toast.LENGTH_SHORT).show();
+                                    }
+                                    actionMode = null;
                                     recreate();
                                 }
                             })

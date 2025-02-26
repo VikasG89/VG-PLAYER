@@ -29,7 +29,6 @@
         app:show_shuffle_button="true"
         app:show_buffering="always"
         app:show_subtitle_button="true"
-        app:show_timeout="1000"
         app:surface_type="surface_view"
         app:use_controller="true">
 

@@ -1,5 +1,6 @@
 package com.mytechnology.video.vgplayer.videos;
 
+
 import static com.mytechnology.video.vgplayer.utility.CommonFunctions.ConvertSecondToHHMMSSString;
 
 import android.annotation.SuppressLint;
@@ -12,7 +13,6 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
-import android.media.browse.MediaBrowser;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -54,10 +54,18 @@ import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RenderersFactory;
+import androidx.media3.exoplayer.SeekParameters;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.extractor.flac.FlacExtractor;
 import androidx.media3.extractor.mp3.Mp3Extractor;
+import androidx.media3.transformer.Composition;
+import androidx.media3.transformer.DefaultEncoderFactory;
+import androidx.media3.transformer.EditedMediaItem;
+import androidx.media3.transformer.ExportException;
+import androidx.media3.transformer.ExportResult;
+import androidx.media3.transformer.Transformer;
+import androidx.media3.ui.DefaultTimeBar;
 import androidx.media3.ui.PlayerView;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -79,12 +87,10 @@ import java.util.Objects;
 
 @UnstableApi
 public class VideoPlayActivity extends AppCompatActivity {
-
     public static final String MY_SHARED_PREFS_VIDEO = "video_player";
     protected ActivityVideoPlayBinding binding;
     private static final String TAG = VideoPlayActivity.class.getSimpleName() + "1";
     private final List<MediaItem> mediaItemList;
-    //private final List<MediaSource> mediaSourceList;
     private ArrayList<VideoModel> mVideoModelArrayList;
     PlayerView playerView;
     private ExoPlayer player;
@@ -99,7 +105,8 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     boolean isScreenLocked = false;
 
-    // Audio Focus Variables
+    // Audio and Audio-Focus Variables
+    private AudioManager audioManager;
     AudioAttributes playbackAttributes;
 
 
@@ -108,7 +115,6 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     // swap & zoom variable
     ConstraintLayout layoutSwapGesture;
-    private AudioManager audioManager;
     private static final int SWIPE_THRESHOLD = 100;
     private int displayBrightness, maxVolume;
     private boolean isControllerVisible = false;
@@ -133,12 +139,12 @@ public class VideoPlayActivity extends AppCompatActivity {
     private static final long DOUBLE_TAP_THRESHOLD = 1000; // threshold in milliseconds
     private boolean externalIntent;
     Uri externalVideoUri;
-
+    boolean isSeekable;
+    DefaultTimeBar timerBar;
 
     public VideoPlayActivity() {
-        //this.mediaSourceList = new ArrayList<>();
-        this.mVideoModelArrayList = new ArrayList<>();
         this.mediaItemList = new ArrayList<>();
+        this.mVideoModelArrayList = new ArrayList<>();
     }
 
     @OptIn(markerClass = UnstableApi.class)
@@ -160,75 +166,28 @@ public class VideoPlayActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        playerView = binding.videoView;
-        mainLayout = binding.main;
-        previous = playerView.findViewById(R.id.exo_previous);
-        next = playerView.findViewById(R.id.exo_next);
-        backWard = playerView.findViewById(R.id.exo_backward);
-        forward = playerView.findViewById(R.id.exo_forward);
-        playPause = playerView.findViewById(R.id.exo_play_pause);
-        trackName = playerView.findViewById(R.id.exo_main_text);
-        lockScreen = binding.lockScreen;
-        screenRotation = playerView.findViewById(R.id.screen_rotation);
-        extraControls = playerView.findViewById(R.id.extra_controls);
-        extraControlsLayout = playerView.findViewById(R.id.extra_controls_layout);
-        layoutSwapGesture = mainLayout.findViewById(R.id.layout_swap_gesture);
-        controllerMainLayout = playerView.findViewById(R.id.layout_player_controller);
-        volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
-        brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
-        txtFastForwardBackward = layoutSwapGesture.findViewById(R.id.txtfast_forward_backward_position);
-        timeBar = layoutSwapGesture.findViewById(R.id.timeBar);
-        txtSpeedDoubleOnLongPress = layoutSwapGesture.findViewById(R.id.txt_speed_double_onLong_press);
-        imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
-        imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);
-        progressBarVolume = volumeLayout.findViewById(R.id.progressBarVolume);
-        progressBarBrightness = brightnessLayout.findViewById(R.id.progressBarBrightness);
-        txtVolumeText = volumeLayout.findViewById(R.id.txtVolumeText);
-        txBrightnessText = brightnessLayout.findViewById(R.id.txBrightnessText);
-        playPauseDoubleTap = layoutSwapGesture.findViewById(R.id.imageViewPlayPauseDoubleTap);
-        extraMenu = playerView.findViewById(R.id.setting_list_Menu);
-
+        // Initialize UI elements
+        initializeUI();
+        // Initialize SharedPreferences
         preferences = getSharedPreferences(MY_SHARED_PREFS_VIDEO, MODE_PRIVATE);
         editor = preferences.edit();
-
+        // Initialize AudioManager and AudioAttributes
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         playbackAttributes = new AudioAttributes.Builder().build();
         // Initialize ExoPlayer
         initializeExoPlayer();
-
-        // Getting Intent from another App for Playing Video
-        final Intent intent = getIntent();
-        final String action = intent.getAction();
-        final String type = intent.getType();
-        if ("android.intent.action.VIEW".equals(action) ||
-                (Objects.equals(type, "audio/*") || Objects.equals(type, "video/*"))) {
-            externalIntent = true;
-            externalVideoUri = intent.getData();
-            assert externalVideoUri != null;
-            Log.e("URI", externalVideoUri.toString());
-            playBroadcastAudio(externalVideoUri);
-        } else {
-            // Getting Intent Data
-            externalIntent = false;
-            final Intent intent1 = getIntent();
-            videoFilesAdapterPosition = intent1.getIntExtra("position", 0);
-            mVideoModelArrayList = intent1.getParcelableArrayListExtra("Parcelable");
-            myVFolder = intent1.getStringExtra("Folder Name");
-            playVideo1(videoFilesAdapterPosition);
-        }
-
+        // Getting Intent for Playing Video
+        handleIntentData();
         // Activity Result Launcher for Request Write Settings Permission
         final ActivityResultLauncher<Intent> settingsLauncher =
-                registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
-            if (Settings.System.canWrite(VideoPlayActivity.this)) {
-                //Write Settings Permissions Granted
-                Log.d(TAG, "onActivityResult: Write Settings Permissions Granted");
-            } else {
-                Toast.makeText(VideoPlayActivity.this, "Write Settings Permissions Denied", Toast.LENGTH_SHORT).show();
-            }
-        });
-
+                registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), _ -> {
+                    if (Settings.System.canWrite(VideoPlayActivity.this)) {
+                        //Write Settings Permissions Granted
+                        Log.d(TAG, "onActivityResult: Write Settings Permissions Granted");
+                    } else {
+                        Toast.makeText(VideoPlayActivity.this, "Write Settings Permissions Denied", Toast.LENGTH_SHORT).show();
+                    }
+                });
         // Setting Auto Fullscreen enabled OR disabled
         playerView.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
             if (visibility == View.GONE) {
@@ -240,8 +199,8 @@ public class VideoPlayActivity extends AppCompatActivity {
                 lockScreen.setVisibility(View.VISIBLE);
             }
         });
-
-        playPauseDoubleTap.setOnClickListener(v -> {
+        // DoubleTap For Play-Pause implementation
+        playPauseDoubleTap.setOnClickListener(_ -> {
             if (!isScreenLocked) {
                 if (player.isPlaying()) {
                     pauseVideo();
@@ -252,7 +211,7 @@ public class VideoPlayActivity extends AppCompatActivity {
                 }
             } else {
                 Snackbar.make(playerView, "Screen is locked! \n You want to Unlock and play/pause the video?", Snackbar.LENGTH_LONG)
-                        .setAction("OK", v1 -> {
+                        .setAction("OK", _ -> {
                             isScreenLocked = !isScreenLocked;
                             if (isScreenLocked) {
                                 lockScreen.setImageResource(R.drawable.lock);
@@ -270,7 +229,6 @@ public class VideoPlayActivity extends AppCompatActivity {
                         }).show();
             }
         });
-
         // SwapGesture implementation
         playerView.setOnTouchListener(new OnSwipeListener(this) {
 
@@ -304,8 +262,8 @@ public class VideoPlayActivity extends AppCompatActivity {
             @Override
             public void onScrollTouch(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
                 assert e1 != null;
-                float deltaX = e2.getX() - e1.getX();
-                float deltaY = e2.getY() - e1.getY();
+                double deltaX = Math.ceil(e2.getX() - e1.getX());
+                double deltaY = Math.ceil(e2.getY() - e1.getY());
                 double brightnessSpeed = 0.01;
                 if (!isScreenLocked) {
                     try {
@@ -313,20 +271,22 @@ public class VideoPlayActivity extends AppCompatActivity {
                             timeBar.setMin(0);
                             timeBar.setMax((int) player.getDuration());
                             // Horizontal swipe for playback control
-                            if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
-                                // Right swipe - Fast forward
-                                forWard_10Sec();
-                                txtFastForwardBackward.setVisibility(View.VISIBLE);
-                                timeBar.setVisibility(View.VISIBLE);
-                                txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
-                                timeBar.setProgress((int) player.getCurrentPosition());
-                            } else if (((deltaX) < SWIPE_THRESHOLD) && (distanceX > 0)) {
-                                // Left swipe - Rewind
-                                backWard_10Sec();
-                                txtFastForwardBackward.setVisibility(View.VISIBLE);
-                                timeBar.setVisibility(View.VISIBLE);
-                                txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
-                                timeBar.setProgress((int) player.getCurrentPosition());
+                            if (isSeekable) {
+                                if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
+                                    // Right swipe - Fast forward
+                                    forWard_10Sec();
+                                    txtFastForwardBackward.setVisibility(View.VISIBLE);
+                                    timeBar.setVisibility(View.VISIBLE);
+                                    txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
+                                    timeBar.setProgress((int) player.getCurrentPosition());
+                                } else if (((deltaX) < SWIPE_THRESHOLD) && (distanceX > 0)) {
+                                    // Left swipe - Rewind
+                                    backWard_10Sec();
+                                    txtFastForwardBackward.setVisibility(View.VISIBLE);
+                                    timeBar.setVisibility(View.VISIBLE);
+                                    txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
+                                    timeBar.setProgress((int) player.getCurrentPosition());
+                                }
                             }
                         } else {
                             // Vertical swipe for volume/brightness control
@@ -370,6 +330,7 @@ public class VideoPlayActivity extends AppCompatActivity {
                                     double deltaYScaled = (deltaY / (double) scrollRange) * 100; // Normalize deltaY to a 0-100 range
                                     maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
                                     int mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+
                                     double calVol = mediaVolume + (-deltaYScaled / 100) * maxVolume;
                                     calVol = Math.max(0, Math.min(maxVolume, calVol));
                                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) calVol, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
@@ -410,41 +371,44 @@ public class VideoPlayActivity extends AppCompatActivity {
 
                 if (!isScreenLocked) {
                     timeBar.setMax((int) player.getDuration());
-                    if (left) {
-                        calculateTimeBetweenTwoDoubleClick();
-                        // Left half - For rewind on Double Tap
-                        doubleTapCountRight = 0;
-                        doubleTapCountLeft++;
-                        Log.d(TAG, "onDoubleTouch: " + doubleTapCountLeft);
-                        backWard_10Sec();
-                        lockScreen.setVisibility(View.GONE);
-                        int increment = 0;
-                        if (player.getCurrentPosition() != timeBar.getMin()) {
-                            increment = doubleTapCountLeft * 10;
-                        }
-                        txtFastForwardBackward.setVisibility(View.VISIBLE);
-                        txtFastForwardBackward.setText(String.format(Locale.getDefault(), "-%d", increment));
-                        timeBar.setProgress(increment);
-                    } else if (right) {
-                        calculateTimeBetweenTwoDoubleClick();
-                        // Right half - For Fast Forward on Double Tap
-                        doubleTapCountLeft = 0;
-                        doubleTapCountRight++;
-                        forWard_10Sec();
-                        lockScreen.setVisibility(View.GONE);
-                        int increment;
-                        if (player.getCurrentPosition() != timeBar.getMax()) {
-                            increment = doubleTapCountRight * 10;
-                            txtFastForwardBackward.setText(String.format(Locale.getDefault(), "+%d", increment));
+                    if (isSeekable) {
+                        if (left) {
+                            calculateTimeBetweenTwoDoubleClick();
+                            // Left half - For rewind on Double Tap
+                            doubleTapCountRight = 0;
+                            doubleTapCountLeft++;
+                            Log.d(TAG, "onDoubleTouch: " + doubleTapCountLeft);
+                            backWard_10Sec();
+                            lockScreen.setVisibility(View.GONE);
+                            int increment = 0;
+                            if (player.getCurrentPosition() != timeBar.getMin()) {
+                                increment = doubleTapCountLeft * 10;
+                            }
+                            txtFastForwardBackward.setVisibility(View.VISIBLE);
+                            txtFastForwardBackward.setText(String.format(Locale.getDefault(), "-%d", increment));
                             timeBar.setProgress(increment);
-                        } else if (player.getCurrentPosition() == timeBar.getMax()) {
-                            increment = 0;
-                            txtFastForwardBackward.setText(String.format(Locale.getDefault(), "+%d", increment));
-                            timeBar.setProgress(increment);
-                        }
-                        txtFastForwardBackward.setVisibility(View.VISIBLE);
+                        } else if (right) {
+                            calculateTimeBetweenTwoDoubleClick();
+                            // Right half - For Fast Forward on Double Tap
+                            doubleTapCountLeft = 0;
+                            doubleTapCountRight++;
+                            forWard_10Sec();
+                            lockScreen.setVisibility(View.GONE);
+                            int increment;
+                            if (player.getCurrentPosition() != timeBar.getMax()) {
+                                increment = doubleTapCountRight * 10;
+                                txtFastForwardBackward.setText(String.format(Locale.getDefault(), "+%d", increment));
+                                timeBar.setProgress(increment);
+                            } else if (player.getCurrentPosition() == timeBar.getMax()) {
+                                increment = 0;
+                                txtFastForwardBackward.setText(String.format(Locale.getDefault(), "+%d", increment));
+                                timeBar.setProgress(increment);
+                            }
+                            txtFastForwardBackward.setVisibility(View.VISIBLE);
 
-                    } else if (center) {
+                        }
+                    }
+                    if (center) {
                         if (player.isPlaying()) {
                             pauseVideo();
                             playPauseDoubleTap.setVisibility(View.VISIBLE);
@@ -490,16 +454,14 @@ public class VideoPlayActivity extends AppCompatActivity {
                 }
             }
         });
+        /*previous.setOnClickListener(_ -> previousVideoPlay());
 
-        previous.setOnClickListener(v -> previousVideoPlay());
+        next.setOnClickListener(_ -> nextVideoPlay());
+        backWard.setOnClickListener(_ -> backWard_10Sec());
 
-        next.setOnClickListener(v -> nextVideoPlay());
+        forward.setOnClickListener(_ -> forWard_10Sec());
 
-        backWard.setOnClickListener(v -> backWard_10Sec());
-
-        forward.setOnClickListener(v -> forWard_10Sec());
-
-        playPause.setOnClickListener(v -> {
+        playPause.setOnClickListener(_ -> {
             if (player.isPlaying()) {
                 pauseVideo();
                 playPauseDoubleTap.setImageResource(R.drawable.play);
@@ -507,8 +469,7 @@ public class VideoPlayActivity extends AppCompatActivity {
                 playVideo();
                 playPauseDoubleTap.setImageResource(R.drawable.pause);
             }
-        });
-
+        });*/
         lockScreen.setOnClickListener(v -> {
             isScreenLocked = !isScreenLocked;
             if (isScreenLocked) {
@@ -523,7 +484,6 @@ public class VideoPlayActivity extends AppCompatActivity {
                 controllerMainLayout.setVisibility(View.VISIBLE);
             }
         });
-
         extraMenu.setOnClickListener(v -> {
             PopupMenu popupMenu = new PopupMenu(VideoPlayActivity.this, extraMenu);
             popupMenu.getMenuInflater().inflate(R.menu.video_play_menu_list, popupMenu.getMenu());
@@ -543,10 +503,14 @@ public class VideoPlayActivity extends AppCompatActivity {
                     dialog.setIcon(R.drawable.propertise_info);
                     String height;
                     String width;
+                    String mimeType;
+                    String bitrate;
                     try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
                         retriever.setDataSource(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath());
                         height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
                         width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+                        mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
+                        bitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -559,6 +523,8 @@ public class VideoPlayActivity extends AppCompatActivity {
                     dialog.setMessage("Name:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName() + "\n\n"
                             + "Video Location:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath() + "\n\n"
                             + "Resolution:  " + width + " X " + height + "\n\n"
+                            + "Video Mime Type:  " + mimeType + "\n\n"
+                            + "Bitrate:  " + bitrate + "\n\n"
                             + "Size:  " + Formatter.formatFileSize(VideoPlayActivity.this, mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getSize()) + "\n\n"
                             + "Duration:  " + ConvertSecondToHHMMSSString(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getDuration()) + "\n\n"
                             + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" + formattedDate + "\n\n");
@@ -572,14 +538,20 @@ public class VideoPlayActivity extends AppCompatActivity {
             });
             popupMenu.show();
         });
-
+        extraControls.setOnClickListener(v -> {
+            extraControlShowing = !extraControlShowing;
+            if (extraControlShowing) {
+                extraControlsLayout.setVisibility(View.VISIBLE);
+            } else {
+                extraControlsLayout.setVisibility(View.GONE);
+            }
+        });
         if (!externalIntent) {
             player.addListener(new Player.Listener() {
                 @Override
                 public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
                     Player.Listener.super.onMediaItemTransition(mediaItem, reason);
                     if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                        trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
                         editor.putLong(mVideoModelArrayList.get(player.getCurrentMediaItemIndex() - 1).getPath(), -1);
                         editor.commit();
                         // If video previously played then show snack bar
@@ -596,38 +568,71 @@ public class VideoPlayActivity extends AppCompatActivity {
                         savePreference(player.getCurrentMediaItemIndex());
                         finish();
                     }
+                    trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
+                    savePreference(player.getCurrentMediaItemIndex());
+                }
+
+                @Override
+                public void onPlaybackStateChanged(int playbackState) {
+                    Player.Listener.super.onPlaybackStateChanged(playbackState);
+                    isSeekable = player.isCurrentMediaItemSeekable();
+                    Log.d("VideoCheck", "Seekable: " + isSeekable);
+                    /*if (!isSeekable) {
+                        MediaItem mediaItem = MediaItem.fromUri(mVideoModelArrayList.get(videoFilesAdapterPosition).getPath());
+                        EditedMediaItem editedmediaItem = new EditedMediaItem.Builder(mediaItem).build();
+                        File file = new File(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath());
+                        String fileName = file.getName();
+                        File outputFile = new File(getApplicationContext().getFilesDir(), fileName);
+                        String outPutFilePath = outputFile.getAbsolutePath();
+                        Transformer transformer = new Transformer.Builder(VideoPlayActivity.this)
+                                .setEncoderFactory(new DefaultEncoderFactory.Builder(getApplicationContext()).build())
+                                .build();
+                        transformer.addListener(new Transformer.Listener() {
+                            @Override
+                            public void onCompleted(Composition composition, ExportResult exportResult) {
+                                Transformer.Listener.super.onCompleted(composition, exportResult);
+                                MediaItem mediaItem = MediaItem.fromUri(outPutFilePath);
+                                player.setMediaItem(mediaItem);
+                                player.prepare();
+                            }
+
+                            @SuppressLint("ClickableViewAccessibility")
+                            @Override
+                            public void onError(Composition composition, ExportResult exportResult, ExportException exportException) {
+                                Transformer.Listener.super.onError(composition, exportResult, exportException);
+                                MediaItem mediaItem = MediaItem.fromUri(mVideoModelArrayList.get(videoFilesAdapterPosition).getPath());
+                                player.setMediaItem(mediaItem);
+                                player.prepare();
+                                isSeekable = false;
+                                timerBar.setOnTouchListener((_, _) -> false);
+                            }
+                        });
+                        transformer.start(editedmediaItem, outPutFilePath);
+                    }*/
                 }
 
                 @Override
                 public void onPlayerError(@NonNull PlaybackException error) {
                     Player.Listener.super.onPlayerError(error);
-                    Log.d(TAG, Objects.requireNonNull(error.getMessage()));
-                    Toast.makeText(VideoPlayActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
-                }
-
-            });
-        } else {
-            player.addListener(new Player.Listener() {
-                @Override
-                public void onPlayerError(@NonNull PlaybackException error) {
-                    Player.Listener.super.onPlayerError(error);
-                    Log.d(TAG, Objects.requireNonNull(error.getMessage()));
+                    switch (error.errorCode) {
+                        case PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND:
+                            // Handle file not found error
+                            System.out.println("File not found: " + (error.getCause() != null ? error.getCause().getMessage() : ""));
+                            break;
+                        case PlaybackException.ERROR_CODE_CONTENT_ALREADY_PLAYING:
+                            // Handle network error
+                            System.out.println("Content Already Playing: " + (error.getCause() != null ? error.getCause().getMessage() : ""));
+                            break;
+                        default:
+                            // Handle other errors
+                            System.out.println("Playback error: " + error.getErrorCodeName() + ", " + (error.getCause() != null ? error.getCause().getMessage() : ""));
+                            break;
+                    }
                     Toast.makeText(VideoPlayActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
                 }
             });
         }
-
         screenRotation.setOnClickListener(v -> changeOrientation());
-
-        extraControls.setOnClickListener(v -> {
-            extraControlShowing = !extraControlShowing;
-            if (extraControlShowing) {
-                extraControlsLayout.setVisibility(View.VISIBLE);
-            } else {
-                extraControlsLayout.setVisibility(View.GONE);
-            }
-        });
-
         OnBackPressedDispatcher dispatcher = getOnBackPressedDispatcher();
         dispatcher.addCallback(new OnBackPressedCallback(true) {
             @Override
@@ -645,7 +650,6 @@ public class VideoPlayActivity extends AppCompatActivity {
                         player.stop();
                     }
                     player.release();
-                    //mediaSourceList.clear();
                     mediaItemList.clear();
                     Intent intent;
                     if (myVFolder.equals("NO Folder Name")) {
@@ -661,40 +665,74 @@ public class VideoPlayActivity extends AppCompatActivity {
 
             }
         });
-
     }
 
-    private void playBroadcastAudio(Uri uri) {
-        MediaItem mediaItem = null;
-        if (uri != null) {
-            mediaItem = MediaItem.fromUri(uri);
-            trackName.setText(uri.getPath());
+    private void initializeUI() {
+        playerView = binding.videoView;
+        mainLayout = binding.main;
+       /* previous = playerView.findViewById(R.id.exo_prev);
+        next = playerView.findViewById(R.id.exo_next);
+        backWard = playerView.findViewById(R.id.exo_backward);
+        forward = playerView.findViewById(R.id.exo_forward);
+        playPause = playerView.findViewById(R.id.exo_play_pause);*/
+        trackName = playerView.findViewById(R.id.exo_main_text);
+        lockScreen = binding.lockScreen;
+        screenRotation = playerView.findViewById(R.id.screen_rotation);
+        extraControls = playerView.findViewById(R.id.extra_controls);
+        extraControlsLayout = playerView.findViewById(R.id.extra_controls_layout);
+        layoutSwapGesture = mainLayout.findViewById(R.id.layout_swap_gesture);
+        controllerMainLayout = playerView.findViewById(R.id.layout_player_controller);
+        volumeLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_volume);
+        brightnessLayout = layoutSwapGesture.findViewById(R.id.layout_swap_gesture_brightness);
+        txtFastForwardBackward = layoutSwapGesture.findViewById(R.id.txtfast_forward_backward_position);
+        timeBar = layoutSwapGesture.findViewById(R.id.timeBar);
+        txtSpeedDoubleOnLongPress = layoutSwapGesture.findViewById(R.id.txt_speed_double_onLong_press);
+        imageViewVolume = volumeLayout.findViewById(R.id.imageViewVolume);
+        imageViewBrightness = brightnessLayout.findViewById(R.id.imageViewBrightness);
+        progressBarVolume = volumeLayout.findViewById(R.id.progressBarVolume);
+        progressBarBrightness = brightnessLayout.findViewById(R.id.progressBarBrightness);
+        txtVolumeText = volumeLayout.findViewById(R.id.txtVolumeText);
+        txBrightnessText = brightnessLayout.findViewById(R.id.txBrightnessText);
+        playPauseDoubleTap = layoutSwapGesture.findViewById(R.id.imageViewPlayPauseDoubleTap);
+        extraMenu = playerView.findViewById(R.id.setting_list_Menu);
+        timerBar = playerView.findViewById(R.id.exo_progress_placeholder);
+    }
+
+    private void handleIntentData() {
+        final Intent intent = getIntent();
+        final String action = intent.getAction();
+        final String type = intent.getType();
+        if ("android.intent.action.VIEW".equals(action) ||
+                (Objects.equals(type, "audio/*") || Objects.equals(type, "video/*"))) {
+            externalIntent = true;
+            externalVideoUri = intent.getData();
+            assert externalVideoUri != null;
+            Log.e("URI", externalVideoUri.toString());
+            playBroadcastAudio(externalVideoUri);
+            player.addListener(new Player.Listener() {
+                @Override
+                public void onPlayerError(@NonNull PlaybackException error) {
+                    Player.Listener.super.onPlayerError(error);
+                    Log.d(TAG, Objects.requireNonNull(error.getMessage()));
+                    Toast.makeText(VideoPlayActivity.this, Objects.requireNonNull(error.getCause()).getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
         } else {
-            Log.e("Error External", String.valueOf((Object) null));
+            // Getting Intent Data
+            externalIntent = false;
+            final Intent intent1 = getIntent();
+            videoFilesAdapterPosition = intent1.getIntExtra("position", 0);
+            mVideoModelArrayList = intent1.getParcelableArrayListExtra("Parcelable");
+            myVFolder = intent1.getStringExtra("Folder Name");
+            for (int i = 0; i < mVideoModelArrayList.size(); ++i) {
+                MediaItem mediaItem = MediaItem.fromUri(Uri.parse(mVideoModelArrayList.get(i).getPath()));
+                mediaItemList.add(mediaItem);
+            }
+            player.setMediaItems(mediaItemList);
+            playerView.setPlayer(player);
+            player.prepare();
+            playVideo1(videoFilesAdapterPosition);
         }
-        assert mediaItem != null;
-        player.setMediaItem(mediaItem);
-        playerView.setPlayer(player);
-        extraMenu.setVisibility(View.GONE);
-        player.prepare();
-        player.setPlayWhenReady(true);
-    }
-
-    private void calculateTimeBetweenTwoDoubleClick() {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastTouchTime > DOUBLE_TAP_THRESHOLD) {
-            doubleTapCountLeft = 0;
-            doubleTapCountRight = 0;
-        }
-        lastTouchTime = currentTime;
-    }
-
-    @OptIn(markerClass = UnstableApi.class)
-    private void hideControllerSwipe() {
-        controllerMainLayout.setVisibility(View.GONE);
-        lockScreen.setVisibility(View.GONE);
-        playerView.hideController();
-        setFullScreen(true);
     }
 
     @OptIn(markerClass = UnstableApi.class)
@@ -706,33 +744,23 @@ public class VideoPlayActivity extends AppCompatActivity {
                 .setFlacExtractorFlags(FlacExtractor.FLAG_DISABLE_ID3_METADATA);
         DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(this)
                 .setDataSourceFactory(new DefaultDataSource.Factory(this));
+
         player = new ExoPlayer.Builder(this, renderersFactory)
                 .setMediaSourceFactory(new DefaultMediaSourceFactory(this, extractorsFactory))
                 .setMediaSourceFactory(mediaSourceFactory)
                 .setHandleAudioBecomingNoisy(true)
                 .setAudioAttributes(playbackAttributes, true)
+                .setSeekParameters(SeekParameters.CLOSEST_SYNC)
                 .build();
     }
 
     private void playVideo1(int currentPosition) {
-        for (int i = 0; i < mVideoModelArrayList.size(); ++i) {
-           /* MediaSource mediaSource = mediaSourceFactory.createMediaSource(MediaItem.fromUri(Uri.parse(mVideoModelArrayList.get(i).getPath())));
-            mediaSourceList.add(mediaSource);*/
-            mediaItemList.add(MediaItem.fromUri(Uri.parse(mVideoModelArrayList.get(i).getPath())));
-        }
-        player.setMediaItems(mediaItemList);
-        //player.setMediaSources(mediaSourceList);
-        playerView.setPlayer(player);
-        player.prepare();
         if (preferences != null && preferences.contains(mVideoModelArrayList.get(currentPosition).getPath())) {
             long position1 = preferences.getLong(mVideoModelArrayList.get(currentPosition).getPath(), 0);
             if (position1 != player.getDuration()) {
                 player.seekTo(currentPosition, position1);
                 Snackbar.make(mainLayout, "Play from Start!", Snackbar.LENGTH_SHORT)
-                        .setAction("Yes", v -> {
-                            player.seekTo(0);
-                            playVideo();
-                        })
+                        .setAction("Yes", v -> player.seekTo(0))
                         .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
                         .show();
             } else {
@@ -742,46 +770,13 @@ public class VideoPlayActivity extends AppCompatActivity {
             player.seekTo(currentPosition, 0);
         }
         trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
-        savePreference(player.getCurrentPosition());
-        player.setPlayWhenReady(true);
-
+        playVideo();
     }
 
     private void playVideo() {
         player.setPlayWhenReady(true);
         isVideoPlaying = true;
-        playPause.setImageResource(R.drawable.pause);
-    }
-
-    private void previousVideoPlay() {
-        savePreference(player.getCurrentPosition());
-        player.stop();
-        int position = player.getCurrentMediaItemIndex();
-        position--;
-        if (position < 0) {
-            position = 0;
-            playVideo1(position);
-        } else {
-            playVideo1(position);
-        }
-    }
-
-    private void nextVideoPlay() {
-        savePreference(player.getCurrentPosition());
-        player.stop();
-        int position = player.getCurrentMediaItemIndex();
-        position++;
-        if (position > mVideoModelArrayList.size() - 1) {
-            position = mVideoModelArrayList.size() - 1;
-            playVideo1(position);
-        } else {
-            playVideo1(position);
-        }
-    }
-
-    private void savePreference(long currentPlayedTime) {
-        editor.putLong(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), currentPlayedTime);
-        editor.commit();
+       // playPause.setImageResource(R.drawable.pause);
     }
 
     private void pauseVideo() {
@@ -802,6 +797,44 @@ public class VideoPlayActivity extends AppCompatActivity {
         } else {
             player.seekTo(num);
         }
+    }
+
+    private void playBroadcastAudio(Uri uri) {
+        MediaItem mediaItem = null;
+        if (uri != null) {
+            mediaItem = MediaItem.fromUri(uri);
+            trackName.setText(uri.getPath());
+        } else {
+            Log.e("Error External", String.valueOf((Object) null));
+        }
+        assert mediaItem != null;
+        player.setMediaItem(mediaItem);
+        playerView.setPlayer(player);
+        extraMenu.setVisibility(View.GONE);
+        player.prepare();
+        playVideo();
+    }
+
+    private void calculateTimeBetweenTwoDoubleClick() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastTouchTime > DOUBLE_TAP_THRESHOLD) {
+            doubleTapCountLeft = 0;
+            doubleTapCountRight = 0;
+        }
+        lastTouchTime = currentTime;
+    }
+
+    @OptIn(markerClass = UnstableApi.class)
+    private void hideControllerSwipe() {
+        controllerMainLayout.setVisibility(View.GONE);
+        lockScreen.setVisibility(View.GONE);
+        playerView.hideController();
+        setFullScreen(true);
+    }
+
+    private void savePreference(long currentPlayedTime) {
+        editor.putLong(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), currentPlayedTime);
+        editor.commit();
     }
 
     private void setFullScreen(boolean isFullScreen) {
@@ -866,5 +899,27 @@ public class VideoPlayActivity extends AppCompatActivity {
             Log.d(TAG, "Permission Denied");
         }
     }
+
+     /* private void previousVideoPlay() {
+        savePreference(player.getCurrentPosition());
+        player.pause();
+        int position = player.getCurrentMediaItemIndex();
+        position = position - 1;
+        if (position < 0) {
+            position = 0;
+        }
+        playVideo1(position);
+    }
+
+    private void nextVideoPlay() {
+        savePreference(player.getCurrentPosition());
+        player.pause();
+        int position = player.getCurrentMediaItemIndex();
+        position = position + 1;
+        if (position > mVideoModelArrayList.size() - 1) {
+            position = mVideoModelArrayList.size() - 1;
+        }
+        playVideo1(position);
+    }*/
 
 }

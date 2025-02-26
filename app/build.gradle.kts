@@ -27,8 +27,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_23
+        targetCompatibility = JavaVersion.VERSION_23
     }
     buildFeatures {
         viewBinding = true
@@ -53,6 +53,9 @@ dependencies {
 
     implementation(libs.review)
     implementation(libs.play.services.oss.licenses)
+
+    implementation("androidx.media3:media3-transformer:1.5.1")
+    
 
 
 }

@@ -80,10 +80,10 @@ public class AppSettings extends AppCompatActivity {
                 // Apply default theme
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
                     UiModeManager uiModeManager = (UiModeManager) getSystemService(UI_MODE_SERVICE);
-                    uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_AUTO);
+                    uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_YES);
                     Log.d(TAG, "onCheckedChanged: " + uiModeManager.getCurrentModeType());
                 } else {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
                 }
                 editor.putBoolean("Theme Default", true);
                 editor.putBoolean("Theme Dark", false);

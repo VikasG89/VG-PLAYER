@@ -5,6 +5,7 @@ buildscript {
         google()
         mavenCentral()
         maven(url = "https://jitpack.io")
+        maven(url = "https://maven.arthenica.com")
     }
     dependencies {
         classpath(libs.oss.licenses.plugin)
