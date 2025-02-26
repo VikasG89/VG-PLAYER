@@ -20,7 +20,7 @@ public class ShareHelper {
 
     public void shareVideo(String filePath) {
         File file = new File(filePath);
-        Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", file);
+        Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
         ClipData clipData = ClipData.newUri(context.getContentResolver(), "Video", uri);
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("video/*");
@@ -33,7 +33,7 @@ public class ShareHelper {
         ArrayList<Uri> uris = new ArrayList<>();
         for (String filePath : filePaths) {
             File file = new File(filePath);
-            Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", file);
+            Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
             uris.add(uri);
         }
         Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);

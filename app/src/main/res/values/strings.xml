@@ -47,4 +47,8 @@
     <string name="rotate_screen">Rotate</string>
     <string name="repeat">Repeat</string>
     <string name="shuffle">Shuffle</string>
+    <string name="speed_2x">2x Speed</string>
+    <string name="speed_4x">4x Speed</string>
+    <string name="speed_6x">6x Speed</string>
+    <string name="speed_8x">8x Speed</string>
 </resources>

@@ -132,19 +132,6 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <ImageView
-            android:id="@+id/imageViewPlayPauseDoubleTap"
-            android:layout_width="@dimen/dp_50"
-            android:layout_height="@dimen/dp_50"
-            android:background="@drawable/square_background"
-            android:contentDescription="@string/image_description"
-            android:visibility="invisible"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/pause" />
-
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/layout_swap_gesture_fast_forward_backward"
             android:layout_width="match_parent"

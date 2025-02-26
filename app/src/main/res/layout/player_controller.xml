@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/layout_player_controller"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -17,6 +18,61 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toTopOf="@+id/constraintLayout4"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/exo_main_text_container">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.5"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_bias="0.5">
+
+                    <ImageView
+                        android:id="@+id/exo_prev"
+                        android:layout_width="@dimen/dp_40"
+                        android:layout_height="@dimen/dp_40"
+                        android:layout_marginEnd="@dimen/dp_35"
+                        android:background="@drawable/square_background"
+                        android:contentDescription="@string/image_description"
+                        android:padding="@dimen/dp_2"
+                        android:src="@drawable/previous" />
+
+                    <ImageView
+                        android:id="@+id/imageViewPlayPauseDoubleTap"
+                        android:layout_width="@dimen/dp_40"
+                        android:layout_height="@dimen/dp_40"
+                        android:background="@drawable/square_background"
+                        android:contentDescription="@string/image_description"
+                        android:visibility="visible"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:srcCompat="@drawable/pause" />
+
+                    <ImageView
+                        android:id="@+id/exo_next"
+                        android:layout_width="@dimen/dp_40"
+                        android:layout_height="@dimen/dp_40"
+                        android:layout_marginStart="@dimen/dp_35"
+                        android:background="@drawable/square_background"
+                        android:contentDescription="@string/image_description"
+                        android:padding="@dimen/dp_2"
+                        android:src="@drawable/next" />
+
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/constraintLayout4"
@@ -43,85 +99,12 @@
                         android:layout_height="@dimen/dp_28"
                         android:contentDescription="@string/image_description"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/exo_prev"
+                        app:layout_constraintEnd_toStartOf="@+id/exo_settings"
                         app:layout_constraintHorizontal_bias="0.5"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintVertical_bias="0.5"
                         app:srcCompat="@drawable/subtitles_icon" />
-
-                    <ImageView
-                        android:id="@+id/exo_prev"
-                        android:layout_width="@dimen/dp_28"
-                        android:layout_height="@dimen/dp_28"
-                        android:contentDescription="@string/image_description"
-                        android:padding="@dimen/dp_2"
-                        android:src="@drawable/previous"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/exo_backward"
-                        app:layout_constraintHorizontal_bias="0.5"
-                        app:layout_constraintStart_toEndOf="@+id/exo_subtitle"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintVertical_bias="0.5" />
-
-                    <ImageView
-                        android:id="@+id/exo_backward"
-                        android:layout_width="@dimen/dp_28"
-                        android:layout_height="@dimen/dp_28"
-                        android:contentDescription="@string/image_description"
-                        android:padding="@dimen/dp_2"
-                        android:src="@drawable/backward_10sec"
-                        android:visibility="gone"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/exo_play_pause"
-                        app:layout_constraintHorizontal_bias="0.5"
-                        app:layout_constraintStart_toEndOf="@+id/exo_prev"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintVertical_bias="0.5" />
-
-                    <ImageView
-                        android:id="@+id/exo_play_pause"
-                        android:layout_width="@dimen/dp_30"
-                        android:layout_height="@dimen/dp_30"
-                        android:contentDescription="@string/image_description"
-                        android:padding="@dimen/dp_2"
-                        android:src="@drawable/pause"
-                        android:visibility="gone"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/exo_forward"
-                        app:layout_constraintHorizontal_bias="0.5"
-                        app:layout_constraintStart_toEndOf="@+id/exo_backward"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintVertical_bias="0.5" />
-
-                    <ImageView
-                        android:id="@+id/exo_forward"
-                        android:layout_width="@dimen/dp_28"
-                        android:layout_height="@dimen/dp_28"
-                        android:contentDescription="@string/image_description"
-                        android:padding="@dimen/dp_2"
-                        android:src="@drawable/forward_10_sec"
-                        android:visibility="gone"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/exo_next"
-                        app:layout_constraintHorizontal_bias="0.5"
-                        app:layout_constraintStart_toEndOf="@+id/exo_play_pause"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintVertical_bias="0.5" />
-
-                    <ImageView
-                        android:id="@+id/exo_next"
-                        android:layout_width="@dimen/dp_28"
-                        android:layout_height="@dimen/dp_28"
-                        android:contentDescription="@string/image_description"
-                        android:padding="@dimen/dp_2"
-                        android:src="@drawable/next"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/exo_settings"
-                        app:layout_constraintHorizontal_bias="0.5"
-                        app:layout_constraintStart_toEndOf="@+id/exo_forward"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintVertical_bias="0.5" />
 
                     <ImageView
                         android:id="@+id/exo_settings"
@@ -131,7 +114,7 @@
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintHorizontal_bias="0.5"
-                        app:layout_constraintStart_toEndOf="@+id/exo_next"
+                        app:layout_constraintStart_toEndOf="@+id/exo_subtitle"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintVertical_bias="0.5"
                         app:srcCompat="@drawable/settings"
@@ -157,8 +140,9 @@
                         android:layout_marginStart="@dimen/dp_10"
                         android:padding="@dimen/dp_1"
                         android:text="@string/_00_00"
+                        android:background="#2C2B2B"
                         android:textColor="@color/white"
-                        android:textSize="@dimen/sp_10"
+                        android:textSize="@dimen/sp_11"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toStartOf="@+id/exo_progress_placeholder"
                         app:layout_constraintHorizontal_bias="0.5"
@@ -186,8 +170,9 @@
                         android:layout_marginEnd="@dimen/dp_10"
                         android:padding="@dimen/dp_1"
                         android:text="@string/_00_00"
+                        android:background="#2C2B2B"
                         android:textColor="@color/white"
-                        android:textSize="@dimen/sp_10"
+                        android:textSize="@dimen/sp_11"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintHorizontal_bias="0.5"
@@ -279,6 +264,7 @@
                     <TextView
                         android:layout_width="@dimen/dp_25"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
                         android:text="@string/rotate_screen"
                         android:textColor="@color/white"
                         android:textSize="@dimen/sp_7" />
@@ -316,6 +302,7 @@
                             <TextView
                                 android:layout_width="@dimen/dp_25"
                                 android:layout_height="wrap_content"
+                                android:gravity="center"
                                 android:text="@string/shuffle"
                                 android:textColor="@color/white"
                                 android:textSize="@dimen/sp_7" />
@@ -339,11 +326,36 @@
                             <TextView
                                 android:layout_width="@dimen/dp_25"
                                 android:layout_height="wrap_content"
+                                android:gravity="center"
                                 android:text="@string/repeat"
                                 android:textColor="@color/white"
                                 android:textSize="@dimen/sp_7" />
                         </LinearLayout>
 
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="@dimen/dp_10"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/press_hold_forward_speed"
+                                android:layout_width="@dimen/dp_25"
+                                android:layout_height="@dimen/dp_25"
+                                android:contentDescription="@string/image_description"
+                                android:scaleType="fitXY"
+                                android:src="@drawable/fast_forward_2x"
+                                app:tint="@color/white" />
+
+                            <TextView
+                                android:id="@+id/txt_speed_onLong_press"
+                                android:layout_width="@dimen/dp_25"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:text="@string/speed_2x"
+                                android:textColor="@color/white"
+                                android:textSize="@dimen/sp_7" />
+                        </LinearLayout>
 
                     </LinearLayout>
 
