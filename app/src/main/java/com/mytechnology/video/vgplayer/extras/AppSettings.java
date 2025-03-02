@@ -16,6 +16,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.mytechnology.video.vgplayer.R;
+import com.mytechnology.video.vgplayer.utility.CommonFunctions;
 
 public class AppSettings extends AppCompatActivity {
 
@@ -23,22 +24,26 @@ public class AppSettings extends AppCompatActivity {
     public static boolean themeDark;
     public static boolean themeLight;
     public static boolean themeDefault;
+    SharedPreferences preferences;
+    SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CommonFunctions.setTheme(this);
         EdgeToEdge.enable(this);
-        SharedPreferences preferences = getSharedPreferences(getPackageName()+"Change Theme", MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        themeDark = preferences.getBoolean("Theme Dark", false);
-        themeLight = preferences.getBoolean("Theme Light", false);
-        themeDefault = preferences.getBoolean("Theme Default", true);
         setContentView(R.layout.activity_app_settings);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        preferences = getSharedPreferences(getPackageName() + "Change Theme", MODE_PRIVATE);
+        editor = preferences.edit();
+        themeDark = preferences.getBoolean("Theme Dark", false);
+        themeLight = preferences.getBoolean("Theme Light", false);
+        themeDefault = preferences.getBoolean("Theme Default", true);
 
         RadioButton radioButton_light = findViewById(R.id.radioButton_light);
         RadioButton radioButton_dark = findViewById(R.id.radioButton_dark);
@@ -80,10 +85,10 @@ public class AppSettings extends AppCompatActivity {
                 // Apply default theme
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
                     UiModeManager uiModeManager = (UiModeManager) getSystemService(UI_MODE_SERVICE);
-                    uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_YES);
+                    uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_AUTO);
                     Log.d(TAG, "onCheckedChanged: " + uiModeManager.getCurrentModeType());
                 } else {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
                 }
                 editor.putBoolean("Theme Default", true);
                 editor.putBoolean("Theme Dark", false);
@@ -93,4 +98,5 @@ public class AppSettings extends AppCompatActivity {
         });
 
     }
+
 }

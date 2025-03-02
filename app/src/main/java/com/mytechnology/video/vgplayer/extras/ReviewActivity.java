@@ -18,6 +18,7 @@ import com.google.android.play.core.review.ReviewInfo;
 import com.google.android.play.core.review.ReviewManager;
 import com.google.android.play.core.review.testing.FakeReviewManager;
 import com.mytechnology.video.vgplayer.R;
+import com.mytechnology.video.vgplayer.utility.CommonFunctions;
 
 
 public class ReviewActivity extends AppCompatActivity {
@@ -29,6 +30,7 @@ public class ReviewActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CommonFunctions.setTheme(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_review);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {

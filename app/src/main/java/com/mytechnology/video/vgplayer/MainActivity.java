@@ -45,6 +45,7 @@ import com.mytechnology.video.vgplayer.databinding.ActivityMainBinding;
 import com.mytechnology.video.vgplayer.extras.AppSettings;
 import com.mytechnology.video.vgplayer.extras.MainActivityAdapter;
 import com.mytechnology.video.vgplayer.extras.ReviewActivity;
+import com.mytechnology.video.vgplayer.utility.CommonFunctions;
 import com.mytechnology.video.vgplayer.utility.FileUpdater;
 import com.mytechnology.video.vgplayer.videos.VideoFolderAdapter;
 import com.mytechnology.video.vgplayer.videos.VideoModel;
@@ -62,10 +63,12 @@ public class MainActivity extends AppCompatActivity implements MainActivityAdapt
     private ActivityResultLauncher<Intent> storageActivityResultLauncher;
     private boolean permissionGranted = false;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
+        CommonFunctions.setTheme(this);
         final ActivityMainBinding inflate = ActivityMainBinding.inflate(getLayoutInflater());
         final ConstraintLayout root = inflate.getRoot();
         setContentView(root);

@@ -1,11 +1,16 @@
 package com.mytechnology.video.vgplayer.utility;
 
 import static android.content.Context.MODE_PRIVATE;
+import static android.content.Context.UI_MODE_SERVICE;
+
+import static androidx.core.content.ContextCompat.getSystemService;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -13,8 +18,10 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.util.Log;
 
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -150,5 +157,37 @@ public class CommonFunctions {
         }
     }
 
+    public static void setTheme(Context context) {
+        boolean themeDark;
+        boolean themeLight;
+        SharedPreferences preferences = context.getSharedPreferences(context.getPackageName() + "Change Theme", MODE_PRIVATE);
+        themeDark = preferences.getBoolean("Theme Dark", false);
+        themeLight = preferences.getBoolean("Theme Light", false);
+        if (themeDark) {
+            // Apply dark theme
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
+                UiModeManager uiModeManager = (UiModeManager) context.getSystemService(UI_MODE_SERVICE);
+                uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_YES);
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            }
+        } else if (themeLight) {
+            // Apply light theme
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
+                UiModeManager uiModeManager = (UiModeManager) context.getSystemService(UI_MODE_SERVICE);
+                uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_NO);
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            }
+        } else {
+            // Apply default theme
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
+                UiModeManager uiModeManager = (UiModeManager) context.getSystemService(UI_MODE_SERVICE);
+                uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_AUTO);
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+            }
+        }
+    }
 
 }

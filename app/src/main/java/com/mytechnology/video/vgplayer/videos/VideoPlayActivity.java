@@ -4,6 +4,7 @@ import static com.mytechnology.video.vgplayer.utility.CommonFunctions.ConvertSec
 
 import android.annotation.SuppressLint;
 import android.app.ComponentCaller;
+import android.app.UiModeManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.format.Formatter;
@@ -37,6 +39,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
@@ -146,13 +149,13 @@ public class VideoPlayActivity extends AppCompatActivity {
     @OptIn(markerClass = UnstableApi.class)
     protected void onCreate(final Bundle bundle) {
         super.onCreate(bundle);
-        /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
             UiModeManager uiModeManager = (UiModeManager) getSystemService(UI_MODE_SERVICE);
-            uiModeManager.setNightMode(UiModeManager.MODE_NIGHT_YES);
-            //AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_UNSPECIFIED);
+            uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_YES);
+            Log.d(TAG, "onCheckedChanged: " + uiModeManager.getCurrentModeType());
         } else {
-            setTheme(R.style.VideoPlayerTheme); // Set the dark theme for this activity
-        }*/
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        }
         EdgeToEdge.enable(this);
         binding = ActivityVideoPlayBinding.inflate(getLayoutInflater());
         final ConstraintLayout root = binding.getRoot();
@@ -522,7 +525,7 @@ public class VideoPlayActivity extends AppCompatActivity {
                             + "Video Location:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath() + "\n\n"
                             + "Resolution:  " + width + " X " + height + "\n\n"
                             + "Video Mime Type:  " + mimeType + "\n\n"
-                            + "Bitrate:  " + bitrate + "\n\n"
+                            /*+ "Bitrate:  " + bitrate + "\n\n"*/
                             + "Size:  " + Formatter.formatFileSize(VideoPlayActivity.this, mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getSize()) + "\n\n"
                             + "Duration:  " + ConvertSecondToHHMMSSString(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getDuration()) + "\n\n"
                             + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" + formattedDate + "\n\n");

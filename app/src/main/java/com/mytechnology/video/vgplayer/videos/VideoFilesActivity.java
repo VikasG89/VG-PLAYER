@@ -47,6 +47,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.mytechnology.video.vgplayer.MainActivity;
 import com.mytechnology.video.vgplayer.R;
 import com.mytechnology.video.vgplayer.databinding.ActivityVideoFilesBinding;
+import com.mytechnology.video.vgplayer.utility.CommonFunctions;
 import com.mytechnology.video.vgplayer.utility.FileUpdater;
 import com.mytechnology.video.vgplayer.utility.ShareHelper;
 import com.mytechnology.video.vgplayer.utility.SwipeToShareCallback;
@@ -75,6 +76,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
     @Override
     protected void onCreate(final Bundle bundle) {
         super.onCreate(bundle);
+        CommonFunctions.setTheme(this);
         EdgeToEdge.enable(this);
         ActivityVideoFilesBinding inflate = ActivityVideoFilesBinding.inflate(getLayoutInflater());
         binding = inflate;

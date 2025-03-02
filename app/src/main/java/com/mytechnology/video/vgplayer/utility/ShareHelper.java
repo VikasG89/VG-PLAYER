@@ -20,20 +20,20 @@ public class ShareHelper {
 
     public void shareVideo(String filePath) {
         File file = new File(filePath);
-        Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
+        Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", file);
         ClipData clipData = ClipData.newUri(context.getContentResolver(), "Video", uri);
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("video/*");
         intent.setClipData(clipData);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        ((Activity) context).startActivityForResult(intent, 222333);
+        ((Activity) context).startActivityForResult(Intent.createChooser(intent, "Share video"), 222333);
     }
 
     public void shareMultiVideos(ArrayList<String> filePaths) {
         ArrayList<Uri> uris = new ArrayList<>();
         for (String filePath : filePaths) {
             File file = new File(filePath);
-            Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
+            Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", file);
             uris.add(uri);
         }
         Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);

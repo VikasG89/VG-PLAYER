@@ -1,10 +1,13 @@
 package com.mytechnology.video.vgplayer.utility;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -49,10 +52,15 @@ public class SwipeToShareCallback extends ItemTouchHelper.SimpleCallback {
             // Perform some processing
             if (direction == ItemTouchHelper.RIGHT) {
                 try {
+                    Log.d("FilePath", "Selected File: " + VideoFilesActivity.videoModels.get(viewHolder.getBindingAdapterPosition()).getPath());
+
                     shareHelper.shareVideo(VideoFilesActivity.videoModels.get(viewHolder.getBindingAdapterPosition()).getPath());
                 } catch (Exception e) {
                     Toast.makeText(context, "Error " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     throw new RuntimeException(e);
+                } finally{
+                    isProcessing = false;
+
                 }
             }
             lock.notify();
