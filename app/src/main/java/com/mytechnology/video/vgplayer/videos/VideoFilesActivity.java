@@ -149,7 +149,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     builder.setTitle("Delete Video?")
                             .setIcon(R.drawable.delete_forever_icon)
                             .setMessage(massage)
-                            .setPositiveButton("Yes", (dialog, id) -> {
+                            .setPositiveButton("Yes", (_, _) -> {
                                 if (!checkStoragePermissions(VideoFilesActivity.this)) {
                                     requestForStoragePermissions(VideoFilesActivity.this, storageActivityResultLauncher);
                                 } else {
@@ -167,7 +167,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                                     recreate();
                                 }
                             })
-                            .setNegativeButton("No", (dialog, id) -> {
+                            .setNegativeButton("No", (dialog, _) -> {
                                 // User cancelled the deletion
                                 dialog.dismiss();
                             });
@@ -187,7 +187,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         };
 
         storageActivityResultLauncher =
-                registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
+                registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), _ -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         //Android is 11 (R) or above
                         if (Environment.isExternalStorageManager()) {
@@ -298,7 +298,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
         builder.setTitle("Delete Video?")
                 .setIcon(R.drawable.delete_forever_icon)
                 .setMessage("Are you sure you want to delete this video?")
-                .setPositiveButton("Yes", (dialog, id) -> {
+                .setPositiveButton("Yes", (_, _) -> {
                     permissionGranted = checkStoragePermissions(VideoFilesActivity.this);
                     if (!permissionGranted) {
                         requestForStoragePermissions(VideoFilesActivity.this, storageActivityResultLauncher);
@@ -315,7 +315,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                         }
                     }
                 })
-                .setNegativeButton("No", (dialog, id) -> {
+                .setNegativeButton("No", (dialog, _) -> {
                     // User cancelled the deletion
                     dialog.dismiss();
                 });
@@ -342,7 +342,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
             edtRename.setText(title);
             builder.setView(edtRename);
             edtRename.requestFocus();
-            builder.setPositiveButton("Yes", (dialog, id) -> {
+            builder.setPositiveButton("Yes", (_, _) -> {
                 String newFileName = edtRename.getText().toString() + extension;
                 try {
                     boolean isRenamed = FileUpdater.renameFile(this, file.getAbsolutePath(), newFileName);
@@ -362,7 +362,7 @@ public class VideoFilesActivity extends AppCompatActivity implements VideoFilesA
                     Toast.makeText(this, "Exception occurred: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
-            builder.setNegativeButton("No", (dialog, id) -> dialog.dismiss());
+            builder.setNegativeButton("No", (dialog, _) -> dialog.dismiss());
             builder.show();
         }
     }

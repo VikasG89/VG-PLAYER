@@ -3,8 +3,6 @@ package com.mytechnology.video.vgplayer.utility;
 import static android.content.Context.MODE_PRIVATE;
 import static android.content.Context.UI_MODE_SERVICE;
 
-import static androidx.core.content.ContextCompat.getSystemService;
-
 import android.Manifest;
 import android.app.Activity;
 import android.app.UiModeManager;
@@ -18,7 +16,6 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
-import android.util.Log;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -93,20 +90,13 @@ public class CommonFunctions {
         folderName = "%" + folderName + "%";
         final String string = context.getSharedPreferences("com.mytechnology.video.vgplayer.sort_Video", MODE_PRIVATE)
                 .getString("AUDIO_SORT", "abcd");
-        String sortOrder = "";
-        switch (string) {
-            case "byName":
-                sortOrder = "_display_name ASC";
-                break;
-            case "byDate":
-                sortOrder = "date_added DESC";
-                break;
-            case "bySize":
-                sortOrder = "_size DESC";
-                break;
-            case "byDuration":
-                sortOrder = "duration DESC";
-        }
+        String sortOrder = switch (string) {
+            case "byName" -> "_display_name ASC";
+            case "byDate" -> "date_added DESC";
+            case "bySize" -> "_size DESC";
+            case "byDuration" -> "duration DESC";
+            default -> "";
+        };
         final Cursor query = context.getContentResolver().query(uri, new String[]{"_data", "_display_name", "date_added", "duration", "_size"},
                 "_data like?", new String[]{folderName}, sortOrder);
         if (query != null) {

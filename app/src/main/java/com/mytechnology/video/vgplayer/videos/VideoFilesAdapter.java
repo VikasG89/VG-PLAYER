@@ -9,7 +9,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.MediaMetadataRetriever;
-import android.os.Build;
 import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;

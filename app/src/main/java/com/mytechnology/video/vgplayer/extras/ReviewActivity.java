@@ -1,6 +1,7 @@
 package com.mytechnology.video.vgplayer.extras;
 
 import static android.content.ContentValues.TAG;
+
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;

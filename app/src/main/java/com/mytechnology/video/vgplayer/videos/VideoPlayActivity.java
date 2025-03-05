@@ -90,7 +90,7 @@ public class VideoPlayActivity extends AppCompatActivity {
     PlayerView playerView;
     private ExoPlayer player;
     private ConstraintLayout mainLayout;
-    protected ImageView lockScreen, extraMenu, screenRotation, extraControls, onHoldSpeed;
+    protected ImageView lockScreen, extraMenu, screenRotation, extraControls, onHoldSpeed, previous, next;
     HorizontalScrollView extraControlsLayout;
     private TextView trackName;
     int videoFilesAdapterPosition;
@@ -98,15 +98,11 @@ public class VideoPlayActivity extends AppCompatActivity {
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
     private SharedPreferences preferences1;
-
     boolean isScreenLocked = false;
 
     // Audio and Audio-Focus Variables
     private AudioManager audioManager;
     AudioAttributes playbackAttributes;
-
-
-    public static boolean isVideoPlaying = false;
     boolean extraControlShowing = false;
 
     // swap & zoom variable
@@ -245,6 +241,10 @@ public class VideoPlayActivity extends AppCompatActivity {
                         }).show();
             }
         });
+
+        // Previous and Next ClickListener
+        previous.setOnClickListener(_ -> previous());
+        next.setOnClickListener(_ -> next());
 
         // SwapGesture implementation
         playerView.setOnTouchListener(new OnSwipeListener(this) {
@@ -470,7 +470,7 @@ public class VideoPlayActivity extends AppCompatActivity {
             }
         });
 
-        lockScreen.setOnClickListener(v -> {
+        lockScreen.setOnClickListener(_ -> {
             isScreenLocked = !isScreenLocked;
             if (isScreenLocked) {
                 lockScreen.setImageResource(R.drawable.lock);
@@ -485,7 +485,7 @@ public class VideoPlayActivity extends AppCompatActivity {
             }
         });
 
-        extraMenu.setOnClickListener(v -> {
+        extraMenu.setOnClickListener(_ -> {
             PopupMenu popupMenu = new PopupMenu(VideoPlayActivity.this, extraMenu);
             popupMenu.getMenuInflater().inflate(R.menu.video_play_menu_list, popupMenu.getMenu());
             popupMenu.setOnMenuItemClickListener(item -> {
@@ -505,13 +505,12 @@ public class VideoPlayActivity extends AppCompatActivity {
                     String height;
                     String width;
                     String mimeType;
-                    String bitrate;
                     try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
                         retriever.setDataSource(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath());
                         height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
                         width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
                         mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
-                        bitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -525,11 +524,10 @@ public class VideoPlayActivity extends AppCompatActivity {
                             + "Video Location:  " + mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath() + "\n\n"
                             + "Resolution:  " + width + " X " + height + "\n\n"
                             + "Video Mime Type:  " + mimeType + "\n\n"
-                            /*+ "Bitrate:  " + bitrate + "\n\n"*/
                             + "Size:  " + Formatter.formatFileSize(VideoPlayActivity.this, mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getSize()) + "\n\n"
                             + "Duration:  " + ConvertSecondToHHMMSSString(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getDuration()) + "\n\n"
                             + "Date Added Or Modified: \n" + "\t\t\t\t\t\t" + formattedDate + "\n\n");
-                    dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, which) -> {
+                    dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialog1, _) -> {
                         playVideo();
                         dialog1.dismiss();
                     });
@@ -540,7 +538,7 @@ public class VideoPlayActivity extends AppCompatActivity {
             popupMenu.show();
         });
 
-        extraControls.setOnClickListener(v -> {
+        extraControls.setOnClickListener(_ -> {
             extraControlShowing = !extraControlShowing;
             if (extraControlShowing) {
                 extraControlsLayout.setVisibility(View.VISIBLE);
@@ -555,31 +553,31 @@ public class VideoPlayActivity extends AppCompatActivity {
                 public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
                     Player.Listener.super.onMediaItemTransition(mediaItem, reason);
                     if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                        editor.putLong(mVideoModelArrayList.get(player.getCurrentMediaItemIndex() - 1).getPath(), -1);
-                        editor.commit();
-                        // If video previously played then show snack bar
-                        if (preferences.contains(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath())) {
-                            Snackbar.make(mainLayout, "Play from Start!", Snackbar.LENGTH_SHORT)
-                                    .setAction("Yes", v -> {
-                                        player.seekTo(0);
-                                        playVideo();
-                                    })
-                                    .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-                                    .show();
-                        }
-                    } else if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
-                        savePreference(player.getCurrentMediaItemIndex());
-                        finish();
+                        savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex() - 1).getPath(), -1);
+
+
                     }
                     trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
-                    savePreference(player.getCurrentMediaItemIndex());
                 }
 
                 @Override
                 public void onPlaybackStateChanged(int playbackState) {
                     Player.Listener.super.onPlaybackStateChanged(playbackState);
-                    isSeekable = player.isCurrentMediaItemSeekable();
-                    Log.d("VideoCheck", "Seekable: " + isSeekable);
+                    if (playbackState == Player.STATE_READY) {
+                        isSeekable = player.isCurrentMediaItemSeekable();
+                        Log.d("VideoCheck", "Seekable: " + isSeekable);
+                    }
+                    if (playbackState == Player.STATE_ENDED) {
+                        savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), -1);
+                        player.stop();
+                        player.release();
+                        player = null;
+                        Intent intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
+                        intent.putExtra("Folder Name", myVFolder);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        finish();
+                    }
                     /*if (!isSeekable) {
                         MediaItem mediaItem = MediaItem.fromUri(mVideoModelArrayList.get(videoFilesAdapterPosition).getPath());
                         EditedMediaItem editedMediaItem = new EditedMediaItem.Builder(mediaItem).build();
@@ -622,40 +620,50 @@ public class VideoPlayActivity extends AppCompatActivity {
             });
         }
 
-        screenRotation.setOnClickListener(v -> changeOrientation());
+        screenRotation.setOnClickListener(_ -> changeOrientation());
 
         OnBackPressedDispatcher dispatcher = getOnBackPressedDispatcher();
         dispatcher.addCallback(new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
 
-                if (externalIntent) {
-                    pauseVideo();
-                    player.stop();
-                    player.release();
-                    finish();
-                } else {
-                    if (player.isPlaying()) {
+                try {
+                    if (externalIntent) {
                         pauseVideo();
-                        savePreference(player.getCurrentPosition());
                         player.stop();
-                    }
-                    player.release();
-                    mediaItemList.clear();
-                    Intent intent;
-                    if (myVFolder.equals("NO Folder Name")) {
-                        intent = new Intent(VideoPlayActivity.this, MainActivity.class);
+                        player.release();
+                        finish();
                     } else {
-                        intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
-                        intent.putExtra("Folder Name", myVFolder);
+                        if (player.isPlaying()) {
+                            pauseVideo();
+                            savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), player.getCurrentPosition());
+                            player.stop();
+                        }
+                        player.release();
+                        mediaItemList.clear();
+                        Intent intent = backspaceIntent();
+                        startActivity(intent);
+                        finish();
                     }
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
 
             }
         });
+    }
+
+    @NonNull
+    private Intent backspaceIntent() {
+        Intent intent;
+        if (myVFolder.equals("NO Folder Name")) {
+            intent = new Intent(VideoPlayActivity.this, MainActivity.class);
+        } else {
+            intent = new Intent(VideoPlayActivity.this, VideoFilesActivity.class);
+            intent.putExtra("Folder Name", myVFolder);
+        }
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        return intent;
     }
 
     @NonNull
@@ -672,6 +680,8 @@ public class VideoPlayActivity extends AppCompatActivity {
         playerView = binding.videoView;
         mainLayout = binding.main;
         trackName = playerView.findViewById(R.id.exo_main_text);
+        previous = playerView.findViewById(R.id.exo_prev);
+        next = playerView.findViewById(R.id.exo_next);
         lockScreen = binding.lockScreen;
         screenRotation = playerView.findViewById(R.id.screen_rotation);
         extraControls = playerView.findViewById(R.id.extra_controls);
@@ -738,8 +748,7 @@ public class VideoPlayActivity extends AppCompatActivity {
     private void initializeExoPlayer() {
         RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true)
                 .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
-        DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
-                .setConstantBitrateSeekingAlwaysEnabled(true);
+        DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true);
         DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(this)
                 .setDataSourceFactory(new DefaultDataSource.Factory(this));
 
@@ -753,34 +762,53 @@ public class VideoPlayActivity extends AppCompatActivity {
     }
 
     private void playVideo1(int currentPosition) {
-        if (preferences != null && preferences.contains(mVideoModelArrayList.get(currentPosition).getPath())) {
-            long position1 = preferences.getLong(mVideoModelArrayList.get(currentPosition).getPath(), 0);
-            if (position1 != player.getDuration()) {
-                player.seekTo(currentPosition, position1);
-                Snackbar.make(mainLayout, "Play from Start!", Snackbar.LENGTH_SHORT)
-                        .setAction("Yes", v -> player.seekTo(0))
-                        .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-                        .show();
+        try {
+            if (preferences != null && preferences.contains(mVideoModelArrayList.get(currentPosition).getPath())) {
+                long position1 = preferences.getLong(mVideoModelArrayList.get(currentPosition).getPath(), 0);
+                if (position1 != player.getDuration()) {
+                    player.seekTo(currentPosition, position1);
+                } else {
+                    player.seekTo(currentPosition, 0);
+                }
             } else {
                 player.seekTo(currentPosition, 0);
             }
-        } else {
-            player.seekTo(currentPosition, 0);
+            trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
+            playVideo();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
-        playVideo();
+    }
+
+    private void previous() {
+        player.pause();
+        savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), player.getCurrentPosition());
+        int position = player.getCurrentMediaItemIndex();
+        position--;
+        if (position < 0) {
+            position = 0;
+        }
+        playVideo1(position);
+    }
+
+    private void next() {
+        player.pause();
+        savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), player.getCurrentPosition());
+        int position = player.getCurrentMediaItemIndex();
+        position++;
+        if (position > mVideoModelArrayList.size() - 1) {
+            position = mVideoModelArrayList.size() - 1;
+        }
+        playVideo1(position);
+
     }
 
     private void playVideo() {
         player.setPlayWhenReady(true);
-        isVideoPlaying = true;
-        // playPause.setImageResource(R.drawable.pause);
     }
 
     private void pauseVideo() {
         player.pause();
-        isVideoPlaying = false;
-        //playPause.setImageResource(R.drawable.play);
     }
 
     private void forWard_10Sec() {
@@ -830,8 +858,8 @@ public class VideoPlayActivity extends AppCompatActivity {
         setFullScreen(true);
     }
 
-    private void savePreference(long currentPlayedTime) {
-        editor.putLong(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), currentPlayedTime);
+    private void savePreference(String keyAsMediaIndex, long currentPlayedTime) {
+        editor.putLong(keyAsMediaIndex, currentPlayedTime);
         editor.commit();
     }
 
@@ -857,11 +885,16 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        if (player.isPlaying()) {
-            pauseVideo();
-            savePreference(player.getCurrentPosition());
-        }
         super.onPause();
+        try {
+            if (player.isPlaying()) {
+                pauseVideo();
+                savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), player.getCurrentPosition());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
@@ -874,12 +907,20 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if (player.isPlaying()) {
-            savePreference(player.getCurrentPosition());
+        super.onDestroy();
+        try {
+            if (player.isPlaying()) {
+                pauseVideo();
+                savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), player.getCurrentPosition());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
             player.stop();
             player.release();
+            player = null;
         }
-        super.onDestroy();
+
     }
 
     @Override

@@ -1,10 +1,8 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-
     android:id="@+id/main"
     android:gravity="center"
     android:orientation="vertical">
@@ -16,7 +14,7 @@
         android:fontFamily="@font/berkshire_swash"
         android:text="@string/v_g"
         android:textAlignment="center"
-        android:textColor="@color/night_black"
+        android:textColor="@color/white"
         android:textSize="@dimen/sp_50"
         android:textStyle="bold" />
 
@@ -35,7 +33,7 @@
         android:fontFamily="@font/berkshire_swash"
         android:text="@string/player"
         android:textAlignment="center"
-        android:textColor="@color/night_black"
+        android:textColor="@color/white"
         android:textSize="@dimen/sp_50"
         android:textStyle="bold" />
 </LinearLayout>
