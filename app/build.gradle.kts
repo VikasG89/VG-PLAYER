@@ -54,7 +54,7 @@ dependencies {
     implementation(libs.review)
     implementation(libs.play.services.oss.licenses)
 
-    implementation("androidx.media3:media3-transformer:1.5.1")
+    implementation("androidx.media3:media3-transformer:1.7.1")
     
 
 

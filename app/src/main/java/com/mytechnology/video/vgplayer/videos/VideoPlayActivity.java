@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -57,8 +58,17 @@ import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RenderersFactory;
 import androidx.media3.exoplayer.SeekParameters;
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
 import androidx.media3.extractor.DefaultExtractorsFactory;
+import androidx.media3.transformer.Composition;
+import androidx.media3.transformer.DefaultEncoderFactory;
+import androidx.media3.transformer.DefaultMuxer;
+import androidx.media3.transformer.EditedMediaItem;
+import androidx.media3.transformer.ExportException;
+import androidx.media3.transformer.ExportResult;
+import androidx.media3.transformer.Transformer;
 import androidx.media3.ui.DefaultTimeBar;
 import androidx.media3.ui.PlayerView;
 
@@ -284,7 +294,13 @@ public class VideoPlayActivity extends AppCompatActivity {
                             timeBar.setMin(0);
                             timeBar.setMax((int) player.getDuration());
                             // Horizontal swipe for playback control
-                            if (isSeekable) {
+                            /*
+
+                            Uncomment below code if not get success in non seekable video conversion!!!!!
+
+
+                             */
+                            /*if (isSeekable) {
                                 if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
                                     // Right swipe - Fast forward
                                     forWard_10Sec();
@@ -300,6 +316,21 @@ public class VideoPlayActivity extends AppCompatActivity {
                                     txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
                                     timeBar.setProgress((int) player.getCurrentPosition());
                                 }
+                            }*/
+                            if ((Math.abs(deltaX) > SWIPE_THRESHOLD) && (distanceX < 0)) {
+                                // Right swipe - Fast forward
+                                forWard_10Sec();
+                                txtFastForwardBackward.setVisibility(View.VISIBLE);
+                                timeBar.setVisibility(View.VISIBLE);
+                                txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
+                                timeBar.setProgress((int) player.getCurrentPosition());
+                            } else if (((deltaX) < SWIPE_THRESHOLD) && (distanceX > 0)) {
+                                // Left swipe - Rewind
+                                backWard_10Sec();
+                                txtFastForwardBackward.setVisibility(View.VISIBLE);
+                                timeBar.setVisibility(View.VISIBLE);
+                                txtFastForwardBackward.setText(ConvertSecondToHHMMSSString((int) player.getCurrentPosition()));
+                                timeBar.setProgress((int) player.getCurrentPosition());
                             }
                         } else {
                             // Vertical swipe for volume/brightness control
@@ -554,8 +585,6 @@ public class VideoPlayActivity extends AppCompatActivity {
                     Player.Listener.super.onMediaItemTransition(mediaItem, reason);
                     if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
                         savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex() - 1).getPath(), -1);
-
-
                     }
                     trackName.setText(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getName());
                 }
@@ -566,6 +595,43 @@ public class VideoPlayActivity extends AppCompatActivity {
                     if (playbackState == Player.STATE_READY) {
                         isSeekable = player.isCurrentMediaItemSeekable();
                         Log.d("VideoCheck", "Seekable: " + isSeekable);
+
+                        if (!isSeekable) {
+                            MediaItem mediaItem = MediaItem.fromUri(mVideoModelArrayList.get(videoFilesAdapterPosition).getPath());
+                            EditedMediaItem editedMediaItem = new EditedMediaItem.Builder(mediaItem).build();
+                            File file = new File(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath());
+                            String fileName = file.getName();
+                            File outputFile = new File(getApplicationContext().getFilesDir(), fileName);
+                            String outPutFilePath = outputFile.getAbsolutePath();
+                            Transformer transformer = new Transformer.Builder(VideoPlayActivity.this)
+                                    .setEncoderFactory(new DefaultEncoderFactory.Builder(getApplicationContext()).build())
+                                    .setMuxerFactory(new DefaultMuxer.Factory())
+                                    .build();
+                            transformer.start(editedMediaItem, outPutFilePath);
+                            transformer.addListener(new Transformer.Listener() {
+                                @Override
+                                public void onCompleted(Composition composition, ExportResult exportResult) {
+                                    Transformer.Listener.super.onCompleted(composition, exportResult);
+                                    Toast.makeText(VideoPlayActivity.this, "Video converted successfully", Toast.LENGTH_SHORT).show();
+                                    MediaItem mediaItem = MediaItem.fromUri(outPutFilePath);
+                                    player.setMediaItem(mediaItem);
+                                    player.prepare();
+                                    isSeekable = false;
+
+                                }
+                                @SuppressLint("ClickableViewAccessibility")
+                                @Override
+                                public void onError(Composition composition, ExportResult exportResult, ExportException exportException) {
+                                    Transformer.Listener.super.onError(composition, exportResult, exportException);
+                                    /*MediaItem mediaItem = MediaItem.fromUri(mVideoModelArrayList.get(videoFilesAdapterPosition).getPath());
+                                    player.setMediaItem(mediaItem);
+                                    player.prepare();
+                                    isSeekable = true;*/
+                                    showSnackError("Error: " + exportException.getMessage());
+                                    //timerBar.setOnTouchListener((_, _) -> false);
+                                }
+                            });
+                        }
                     }
                     if (playbackState == Player.STATE_ENDED) {
                         savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), -1);
@@ -578,38 +644,7 @@ public class VideoPlayActivity extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                     }
-                    /*if (!isSeekable) {
-                        MediaItem mediaItem = MediaItem.fromUri(mVideoModelArrayList.get(videoFilesAdapterPosition).getPath());
-                        EditedMediaItem editedMediaItem = new EditedMediaItem.Builder(mediaItem).build();
-                        File file = new File(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath());
-                        String fileName = file.getName();
-                        File outputFile = new File(getApplicationContext().getFilesDir(), fileName);
-                        String outPutFilePath = outputFile.getAbsolutePath();
-                        Transformer transformer = new Transformer.Builder(VideoPlayActivity.this)
-                                .setEncoderFactory(new DefaultEncoderFactory.Builder(getApplicationContext()).build())
-                                .build();
-                        transformer.addListener(new Transformer.Listener() {
-                            @Override
-                            public void onCompleted(Composition composition, ExportResult exportResult) {
-                                Transformer.Listener.super.onCompleted(composition, exportResult);
-                                MediaItem mediaItem = MediaItem.fromUri(outPutFilePath);
-                                player.setMediaItem(mediaItem);
-                                player.prepare();
-                            }
 
-                            @SuppressLint("ClickableViewAccessibility")
-                            @Override
-                            public void onError(Composition composition, ExportResult exportResult, ExportException exportException) {
-                                Transformer.Listener.super.onError(composition, exportResult, exportException);
-                                MediaItem mediaItem = MediaItem.fromUri(mVideoModelArrayList.get(videoFilesAdapterPosition).getPath());
-                                player.setMediaItem(mediaItem);
-                                player.prepare();
-                                isSeekable = false;
-                                timerBar.setOnTouchListener((_, _) -> false);
-                            }
-                        });
-                        transformer.start(editedMediaItem, outPutFilePath);
-                    }*/
                 }
 
                 @Override
@@ -664,6 +699,18 @@ public class VideoPlayActivity extends AppCompatActivity {
         }
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return intent;
+    }
+
+    private void showSnackError(String error){
+
+        Snackbar snackbar = Snackbar.make(mainLayout, error, Snackbar.LENGTH_INDEFINITE);
+        snackbar.setBackgroundTint(Color.RED);
+        snackbar.setTextColor(Color.BLACK);
+        snackbar.setTextMaxLines(10);
+        snackbar.setAction("Cancel", _ -> {
+            snackbar.dismiss();
+        });
+        snackbar.show();
     }
 
     @NonNull
@@ -746,15 +793,23 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     @OptIn(markerClass = UnstableApi.class)
     private void initializeExoPlayer() {
-        RenderersFactory renderersFactory = new DefaultRenderersFactory(this).setEnableDecoderFallback(true)
+        RenderersFactory renderersFactory
+                = new DefaultRenderersFactory(this)
+                .setEnableDecoderFallback(true)
+                .setMediaCodecSelector(MediaCodecSelector.DEFAULT)
                 .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
-        DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true);
-        DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(this)
+        DefaultExtractorsFactory extractorsFactory
+                = new DefaultExtractorsFactory()
+                .setConstantBitrateSeekingEnabled(true);
+        DefaultMediaSourceFactory mediaSourceFactory
+                = new DefaultMediaSourceFactory(this)
                 .setDataSourceFactory(new DefaultDataSource.Factory(this));
+
 
         player = new ExoPlayer.Builder(this, renderersFactory)
                 .setMediaSourceFactory(new DefaultMediaSourceFactory(this, extractorsFactory))
                 .setMediaSourceFactory(mediaSourceFactory)
+                .setTrackSelector(new DefaultTrackSelector(VideoPlayActivity.this))
                 .setHandleAudioBecomingNoisy(true)
                 .setAudioAttributes(playbackAttributes, true)
                 .setSeekParameters(SeekParameters.CLOSEST_SYNC)
@@ -885,42 +940,39 @@ public class VideoPlayActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        super.onPause();
-        try {
+        if (player != null) {
             if (player.isPlaying()) {
                 pauseVideo();
                 savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), player.getCurrentPosition());
+            } else {
+                savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), -1);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
-
+        super.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (!player.isPlaying()) {
-            playVideo();
+        if (player != null) {
+            if (!player.isPlaying()) {
+                playVideo();
+            }
         }
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-        try {
+        if (player != null) {
             if (player.isPlaying()) {
                 pauseVideo();
                 savePreference(mVideoModelArrayList.get(player.getCurrentMediaItemIndex()).getPath(), player.getCurrentPosition());
+                player.stop();
+                player.release();
+                player = null;
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            player.stop();
-            player.release();
-            player = null;
         }
-
+        super.onDestroy();
     }
 
     @Override
